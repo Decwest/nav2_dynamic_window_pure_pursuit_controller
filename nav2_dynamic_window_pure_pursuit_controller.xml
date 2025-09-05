@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<library path="nav2_dynamic_window_pure_pursuit_controller">
+  <class type="nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController" base_class_type="nav2_core::Controller">
+    <description>
+      nav2_dynamic_window_pure_pursuit_controller
+    </description>
+  </class>
+</library>

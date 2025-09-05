@@ -9,10 +9,24 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <test_depend>ament_lint_auto</test_depend>
+  <depend>nav2_common</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_regulated_pure_pursuit_controller</depend>
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav2_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/nav2_dynamic_window_pure_pursuit_controller.xml" />
   </export>
 </package>
