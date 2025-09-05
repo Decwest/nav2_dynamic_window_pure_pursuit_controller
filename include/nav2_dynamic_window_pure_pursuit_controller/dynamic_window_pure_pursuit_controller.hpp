@@ -29,13 +29,18 @@ public:
     const geometry_msgs::msg::Twist & speed,
     nav2_core::GoalChecker * goal_checker) override;
 
-  // （必要なら）setPlan等は親の実装をそのまま利用
-  // using nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController::setPlan;
+  void computeOptimalVelocityUsingDynamicWindow(
+    const double curvature,
+    const geometry_msgs::msg::Twist current_speed,
+    const double regulated_linear_vel,
+    double & optimal_linear_vel,
+    double & optimal_angular_vel
+  );
 
 private:
   // 追加パラメータ
-  double desired_angular_vel_{0.0};   // new!
-  double max_linear_accel_{0.5};      // new!
+  double desired_angular_vel_{0.5};   // new!
+  double max_linear_accel_{1.0};      // new!
   // 既存RPPの desired_linear_vel / max_angular_accel は親が保持
   // ここではオーバーライド時に取得＆利用する（configure内でget_parameter）
 };

@@ -131,6 +131,9 @@ controller_server:
     FollowPath:
       plugin: "nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController"
       desired_linear_vel: 0.5
+      desired_angular_vel: 1.0
+      max_linear_accel: 0.5
+      max_angular_accel: 1.0
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -153,7 +156,6 @@ controller_server:
       use_rotate_to_heading: true
       allow_reversing: false
       rotate_to_heading_min_angle: 0.785
-      max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
       min_distance_to_obstacle: 0.0
       stateful: true
@@ -318,10 +320,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.26, 0.0, 1.0]
-    min_velocity: [-0.26, 0.0, -1.0]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
+    max_velocity: [0.5, 0.0, 1.0]
+    min_velocity: [-0.5, 0.0, -1.0]
+    max_accel: [0.5, 0.0, 1.0]
+    max_decel: [-0.5, 0.0, -1.0]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
