@@ -79,18 +79,6 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
     dw_vmax = std::max(dw_vmin, regulated_linear_vel);
   }
 
-  // OK 
-  // std::cout << "A_MAX " << A_MAX << std::endl;
-  // std::cout << "V_MAX " << V_MAX << std::endl;
-  // std::cout << "AW_MAX " << AW_MAX << std::endl;
-  // std::cout << "W_MAX " << W_MAX << std::endl;
-  // std::cout << "DT " << DT << std::endl;
-  std::cout << "velocity_feedback " << velocity_feedback_ << std::endl;
-  std::cout << "allow_reversing_ " << allow_reversing_ << std::endl;
-  std::cout << "regulated v " << regulated_linear_vel << std::endl;
-  std::cout << "current linear vel " << current_speed.linear.x << std::endl;
-  std::cout << "current angular vel " << current_speed.angular.z << std::endl;
-
   const double k = curvature;
 
   // ---- 早期決定: 曲率が 0（w = 0） ----

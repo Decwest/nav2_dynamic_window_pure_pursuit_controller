@@ -84,7 +84,7 @@ class FollowPathClient(Node):
         self._current_goal_handle = None
         self._frame_id = frame_id
 
-        # --- QoS（RVizに残るようにTRASIENT_LOCAL） ---
+        # --- QoS（RVizに残るように TRANSIENT_LOCAL） ---
         latched_qos = QoSProfile(
             depth=1,
             reliability=QoSReliabilityPolicy.RELIABLE,
@@ -99,11 +99,31 @@ class FollowPathClient(Node):
         self._label_pub  = self.create_publisher(MarkerArray, '/viz/path_labels', latched_qos)
         self._path_markers_pub = self.create_publisher(MarkerArray, '/viz/path_markers', latched_qos)
 
-        # Robot trajectory (subscribe odom -> publish Visualization Marker)
-        self._traj_pub = self.create_publisher(Marker, '/viz/robot_traj', 10)
-        self._traj_points = []
-        self._traj_frame_id = 'odom'  # 走行軌跡は odom フレームで可視化
+        # Robot trajectory (subscribe odom -> publish Visualization MarkerArray)
+        self._traj_pub = self.create_publisher(MarkerArray, '/viz/robot_trajs', 10)
+        # 手法ごとに点列を保持
+        self._traj_points = {
+            'PP':   [],
+            'APP':  [],
+            'RPP':  [],
+            'DWPP': []
+        }
+        self._active_traj = None          # 現在アクティブな手法名（send_path時に設定）
+        self._traj_frame_id = 'odom'
         self._traj_lock = threading.Lock()
+
+        # 手法→色マップ（R,G,B）
+        self._traj_colors = {
+            'PP':   (1.0, 0.0, 0.0),   # red
+            'APP':  (0.0, 0.7, 0.2),   # green
+            'RPP':  (0.0, 0.4, 1.0),   # blue
+            'DWPP': (0.8, 0.2, 0.8)    # purple
+        }
+
+        # 走行中のみ記録するためのフラグ
+        self._recording = False
+
+        # /odom 購読（SensorData QoS）
         self._odom_sub = self.create_subscription(Odometry, '/odom', self._on_odom, qos_profile_sensor_data)
 
         # Gazebo warp clients
@@ -122,11 +142,11 @@ class FollowPathClient(Node):
         colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]  # Red, Green, Blue
         paths = [('Path A', path_A), ('Path B', path_B), ('Path C', path_C)]
         now = self.get_clock().now().to_msg()
-        
+
         for mid, ((name, path), color) in enumerate(zip(paths, colors)):
             if not path.poses:
                 continue
-                
+
             marker = Marker()
             marker.header.frame_id = path.header.frame_id
             marker.header.stamp = now
@@ -136,15 +156,15 @@ class FollowPathClient(Node):
             marker.action = Marker.ADD
             marker.scale.x = 0.05  # Line width
             marker.color.r = color[0]
-            marker.color.g = color[1] 
+            marker.color.g = color[1]
             marker.color.b = color[2]
             marker.color.a = 1.0
-            
+
             for pose_stamped in path.poses:
                 marker.points.append(pose_stamped.pose.position)
-            
+
             markers.markers.append(marker)
-        
+
         self._path_markers_pub.publish(markers)
 
         # Labels (TEXT_VIEW_FACING)
@@ -157,53 +177,64 @@ class FollowPathClient(Node):
             m.id = mid
             m.type = Marker.TEXT_VIEW_FACING
             m.action = Marker.ADD
-            # ラベル位置：パスの始点少し上
             if p.poses:
                 m.pose.position.x = p.poses[-1].pose.position.x + 0.1
                 m.pose.position.y = p.poses[-1].pose.position.y + 0.1
             m.pose.position.z = 0.3
-            m.scale.z = 0.25  # 文字サイズ
+            m.scale.z = 0.25
             m.color.r = 1.0; m.color.g = 1.0; m.color.b = 1.0; m.color.a = 1.0
             m.text = name
             labels.markers.append(m)
         self._label_pub.publish(labels)
-        # self.get_logger().info("Published paths and labels with colored markers for RViz.")
 
     # ===== Robot trajectory =====
     def _on_odom(self, msg: Odometry):
         with self._traj_lock:
+            # 走行中でなければ記録しない（Warp などはここで無視）
+            if not self._recording:
+                return
+
             if self._traj_frame_id != msg.header.frame_id:
-                # フレームが変わったら合わせる
-                self._traj_points = []
+                # フレーム変更に追従（全軌跡クリア）
+                for k in self._traj_points:
+                    self._traj_points[k] = []
                 self._traj_frame_id = msg.header.frame_id
-            
-            # 新しい点を追加（距離チェックで間引き）
+
+            # 追従手法が未選択なら何もしない
+            if self._active_traj not in self._traj_points:
+                return
+
             current_pos = msg.pose.pose.position
-            if not self._traj_points or self._distance_2d(self._traj_points[-1], current_pos) > 0.05:
-                self._traj_points.append(current_pos)
-                
-                # メモリ対策：必要に応じて上限
-                if len(self._traj_points) > 5000:
-                    self._traj_points = self._traj_points[-2000:]
-                
-                # LINE_STRIPマーカーとしてpublish（2点以上ある場合のみ）
-                if len(self._traj_points) >= 2:
-                    marker = Marker()
-                    marker.header.frame_id = self._traj_frame_id
-                    marker.header.stamp = msg.header.stamp
-                    marker.ns = 'robot_trajectory'
-                    marker.id = 0
-                    marker.type = Marker.LINE_STRIP
-                    marker.action = Marker.ADD
-                    marker.scale.x = 0.03  # Line width
-                    marker.color.r = 1.0
-                    marker.color.g = 0.5
-                    marker.color.b = 0.0  # Orange color
-                    marker.color.a = 0.8
-                    marker.points = self._traj_points.copy()
-                    
-                    self._traj_pub.publish(marker)
-    
+            pts = self._traj_points[self._active_traj]
+
+            # 間引き（最後の点から5cm以上動いたら追加）
+            if not pts or self._distance_2d(pts[-1], current_pos) > 0.05:
+                pts.append(current_pos)
+                if len(pts) > 5000:
+                    self._traj_points[self._active_traj] = pts[-2000:]
+
+            # 4手法すべてをまとめて MarkerArray で出す
+            marr = MarkerArray()
+            now = msg.header.stamp
+            mid = 0
+            for name, points in self._traj_points.items():
+                if len(points) < 2:
+                    continue
+                r, g, b = self._traj_colors[name]
+                m = Marker()
+                m.header.frame_id = self._traj_frame_id
+                m.header.stamp = now
+                m.ns = 'robot_trajectory'
+                m.id = mid; mid += 1
+                m.type = Marker.LINE_STRIP
+                m.action = Marker.ADD
+                m.scale.x = 0.035
+                m.color.r = r; m.color.g = g; m.color.b = b; m.color.a = 0.95
+                m.points = points.copy()
+                marr.markers.append(m)
+
+            self._traj_pub.publish(marr)
+
     def _distance_2d(self, p1, p2):
         dx = p1.x - p2.x
         dy = p1.y - p2.y
@@ -211,18 +242,16 @@ class FollowPathClient(Node):
 
     def clear_trajectory(self):
         with self._traj_lock:
-            self._traj_points = []
-        
-        # 空のマーカーをPublishしてRViz側の表示をクリア
-        marker = Marker()
-        marker.header.frame_id = self._traj_frame_id
-        marker.header.stamp = self.get_clock().now().to_msg()
-        marker.ns = 'robot_trajectory'
-        marker.id = 0
-        marker.type = Marker.LINE_STRIP
-        marker.action = Marker.DELETE
-        self._traj_pub.publish(marker)
-        self.get_logger().info("Cleared robot trajectory.")
+            for k in self._traj_points:
+                self._traj_points[k] = []
+
+        ma = MarkerArray()
+        m = Marker()
+        m.action = Marker.DELETEALL
+        ma.markers.append(m)
+        self._traj_pub.publish(ma)
+
+        self.get_logger().info("Cleared ALL robot trajectories (PP/APP/RPP/DWPP).")
 
     # ===== Initial pose =====
     def publish_initial_pose(self, x: float = 0.0, y: float = 0.0, yaw_rad: float = 0.0):
@@ -258,6 +287,10 @@ class FollowPathClient(Node):
             self._gz_model_cli = self.create_client(_SetModelState, '/gazebo/set_model_state')
 
     def warp_model(self, model_name: str = 'tb3', x: float = 0.0, y: float = 0.0, z: float = 0.0, yaw_rad: float = 0.0):
+        # Warp の前に記録OFF（Warp移動は記録しない）
+        with self._traj_lock:
+            self._recording = False
+
         self._ensure_gazebo_clients()
         _, _, qz, qw = yaw_to_quat(yaw_rad)
 
@@ -271,7 +304,6 @@ class FollowPathClient(Node):
             except Exception as e:
                 self.get_logger().warn(f"{api_name} failed: {e}")
 
-        # まず /gazebo/set_entity_state を試す
         if self._gz_entity_cli is not None and self._gz_entity_cli.wait_for_service(timeout_sec=0.5):
             req = _SetEntityState.Request()
             state = _EntityState()
@@ -287,7 +319,6 @@ class FollowPathClient(Node):
             fut.add_done_callback(lambda f: _log_result('set_entity_state', f))
             return True
 
-        # 次に /gazebo/set_model_state を試す
         if self._gz_model_cli is not None and self._gz_model_cli.wait_for_service(timeout_sec=0.5):
             req = _SetModelState.Request()
             ms = _ModelState()
@@ -319,10 +350,10 @@ class FollowPathClient(Node):
         while True:
             try:
                 self.publish_paths_and_labels(path_A, path_B, path_C)
-                time.sleep(1.0)  # 1秒間隔で定期的にpublish
+                time.sleep(1.0)
             except Exception as e:
                 self.get_logger().warn(f"Periodic path publish failed: {e}")
-                time.sleep(5.0)  # エラー時は少し長く待つ
+                time.sleep(5.0)
 
     # ===== follow_path action =====
     def send_path(self, path_msg: Path, controller_id: str, goal_checker_id: str):
@@ -334,12 +365,21 @@ class FollowPathClient(Node):
         goal.controller_id = controller_id
         goal.goal_checker_id = goal_checker_id
 
+        with self._traj_lock:
+            self._active_traj = controller_id
+            # 手法切替時はその手法の軌跡をクリアして「新しい走行」として描く
+            self._traj_points[controller_id] = []
+            self._recording = True
+
         send_future = self._client.send_goal_async(goal, feedback_callback=self._feedback_cb)
 
         def _goal_response_cb(fut):
             self._current_goal_handle = fut.result()
             if not self._current_goal_handle.accepted:
                 self.get_logger().warn('Goal rejected by controller_server.')
+                # 受理されなかったら記録OFFに戻す
+                with self._traj_lock:
+                    self._recording = False
                 return
             self.get_logger().info(f'Goal accepted by controller "{controller_id}".')
             self._current_goal_handle.get_result_async().add_done_callback(self._result_cb)
@@ -353,14 +393,24 @@ class FollowPathClient(Node):
             return
         cancel_future = gh.cancel_goal_async()
         cancel_future.add_done_callback(lambda _: self.get_logger().info('Cancel request sent.'))
+        # キャンセルしたら記録OFF
+        with self._traj_lock:
+            self._recording = False
 
     def _feedback_cb(self, feedback_msg):
         self.get_logger().debug(f'Feedback: {feedback_msg}')
 
     def _result_cb(self, fut):
-        result = fut.result().result
-        status = fut.result().status
-        self.get_logger().info(f'Result received. status={status}, result={result}')
+        # ゴール終了で必ず記録OFF
+        with self._traj_lock:
+            self._recording = False
+
+        try:
+            result = fut.result().result
+            status = fut.result().status
+            self.get_logger().info(f'Result received. status={status}, result={result}')
+        except Exception as e:
+            self.get_logger().warn(f'Result callback error: {e}')
 
 
 class AppGUI:
@@ -371,34 +421,38 @@ class AppGUI:
 
         self.root = tk.Tk()
         self.root.title("FollowPath GUI (Nav2)")
-        self.root.geometry("560x400")
+        self.root.geometry("1500x800")
+        
+        # Set larger default font for the whole application
+        default_font = ("Arial", 20)
+        self.root.option_add("*Font", default_font)
 
-        tk.Label(self.root, text=f"frame_id: {self.frame_id}").pack(pady=4)
+        tk.Label(self.root, text=f"frame_id: {self.frame_id}", font=("Arial", 20)).pack(pady=8)
 
-        frm = tk.Frame(self.root); frm.pack(pady=4)
+        frm = tk.Frame(self.root); frm.pack(pady=8)
 
-        tk.Label(frm, text="Controller:").grid(row=0, column=0, sticky="e")
+        tk.Label(frm, text="Controller:", font=("Arial", 20)).grid(row=0, column=0, sticky="e")
         self.controller_var = tk.StringVar(value="PP")
         self.controller_cb = ttk.Combobox(frm, textvariable=self.controller_var,
-                                          values=["PP", "APP", "RPP", "DWPP"], state="readonly", width=10)
+                                          values=["PP", "APP", "RPP", "DWPP"], state="readonly", width=10, font=("Arial", 20, "bold"))
         self.controller_cb.grid(row=0, column=1, padx=6)
 
         self.goal_checker_id = "goal_checker"
-        tk.Label(frm, text=f"Goal checker: {self.goal_checker_id}").grid(row=1, column=0, columnspan=2, pady=4)
+        tk.Label(frm, text=f"Goal checker: {self.goal_checker_id}", font=("Arial", 20)).grid(row=1, column=0, columnspan=2, pady=8)
 
         # Buttons row
-        btn_row = tk.Frame(self.root); btn_row.pack(pady=(6, 8))
-        tk.Button(btn_row, text="Warp Robot (0,0,0)",   command=self._on_warp_tb3).grid(row=0, column=0, padx=6)
-        tk.Button(btn_row, text="Clear Trajectory",     command=self._on_clear_traj).grid(row=0, column=1, padx=6)
+        btn_row = tk.Frame(self.root); btn_row.pack(pady=(8, 12))
+        tk.Button(btn_row, text="Warp Robot (0,0,0)", font=("Arial", 20, "bold"), command=self._on_warp_tb3).grid(row=0, column=0, padx=8)
+        tk.Button(btn_row, text="Clear Trajectory", font=("Arial", 20, "bold"), command=self._on_clear_traj).grid(row=0, column=1, padx=8)
 
-        tk.Label(self.root, text="Paths").pack(pady=(6, 2))
+        tk.Label(self.root, text="Paths", font=("Arial", 20)).pack(pady=(10, 4))
         btns = tk.Frame(self.root); btns.pack()
 
         for i, name in enumerate(self.paths_dict.keys()):
-            tk.Button(btns, text=name, width=18,
-                      command=lambda n=name: self._on_send(n)).grid(row=i // 2, column=i % 2, padx=6, pady=6)
+            tk.Button(btns, text=name, width=20, font=("Arial", 20, "bold"),
+                      command=lambda n=name: self._on_send(n)).grid(row=i // 2, column=i % 2, padx=8, pady=8)
 
-        tk.Button(self.root, text="Cancel Current", command=self._on_cancel).pack(pady=(8, 4))
+        tk.Button(self.root, text="Cancel", font=("Arial", 20, "bold"), command=self._on_cancel).pack(pady=(12, 8))
 
         # 初回：PathとラベルをPublish
         self.node.publish_paths_and_labels(

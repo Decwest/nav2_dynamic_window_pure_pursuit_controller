@@ -564,7 +564,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /viz/path_markers
           Value: true
-        - Class: rviz_default_plugins/Marker
+        - Class: rviz_default_plugins/MarkerArray
           Enabled: true
           Name: Robot
           Namespaces:
@@ -572,10 +572,9 @@ Visualization Manager:
           Topic:
             Depth: 5
             Durability Policy: Volatile
-            Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /viz/robot_traj
+            Value: /viz/robot_trajs
           Value: true
       Enabled: true
       Name: Path
