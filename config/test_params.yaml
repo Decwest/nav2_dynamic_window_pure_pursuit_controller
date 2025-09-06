@@ -1,0 +1,344 @@
+controller_server:
+  ros__parameters:
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    progress_checker_plugins: ["progress_checker"] # progress_checker_plugin: "progress_checker" For Humble and older
+    goal_checker_plugins: ["goal_checker"]
+    controller_plugins: ["PP", "APP", "RPP", "DWPP"]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+    goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+      stateful: True
+    PP:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      max_angular_accel: 1.0
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.8
+      transform_tolerance: 0.1
+      use_velocity_scaled_lookahead_dist: false # APP
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 0.6
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_regulated_linear_velocity_scaling: false # RPP
+      use_fixed_curvature_lookahead: false
+      curvature_lookahead_dist: 0.25
+      use_cost_regulated_linear_velocity_scaling: false # RPP
+      cost_scaling_dist: 0.3
+      cost_scaling_gain: 1.0
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: true
+      allow_reversing: false
+      rotate_to_heading_min_angle: 0.785
+      max_robot_pose_search_dist: 10.0
+      min_distance_to_obstacle: 0.0
+      stateful: true
+    APP:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      max_angular_accel: 1.0
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.8
+      transform_tolerance: 0.1
+      use_velocity_scaled_lookahead_dist: true # APP
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 0.6
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_regulated_linear_velocity_scaling: false # RPP
+      use_fixed_curvature_lookahead: false
+      curvature_lookahead_dist: 0.25
+      use_cost_regulated_linear_velocity_scaling: false # RPP
+      cost_scaling_dist: 0.3
+      cost_scaling_gain: 1.0
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: true
+      allow_reversing: false
+      rotate_to_heading_min_angle: 0.785
+      max_robot_pose_search_dist: 10.0
+      min_distance_to_obstacle: 0.0
+      stateful: true
+    RPP:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      max_angular_accel: 1.0
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.8
+      transform_tolerance: 0.1
+      use_velocity_scaled_lookahead_dist: true # APP
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 0.6
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_regulated_linear_velocity_scaling: true # RPP
+      use_fixed_curvature_lookahead: false
+      curvature_lookahead_dist: 0.25
+      use_cost_regulated_linear_velocity_scaling: true # RPP
+      cost_scaling_dist: 0.3
+      cost_scaling_gain: 1.0
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: true
+      allow_reversing: false
+      rotate_to_heading_min_angle: 0.785
+      max_robot_pose_search_dist: 10.0
+      min_distance_to_obstacle: 0.0
+      stateful: true
+    DWPP:
+      plugin: "nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController"
+      desired_linear_vel: 0.5 # DWPP
+      desired_angular_vel: 1.0 # DWPP
+      max_linear_accel: 0.5 # DWPP
+      max_angular_accel: 1.0 # DWPP
+      velocity_feedback: "OPEN_LOOP"
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.8
+      transform_tolerance: 0.1
+      use_velocity_scaled_lookahead_dist: true # APP
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 0.6
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_regulated_linear_velocity_scaling: true # RPP
+      use_fixed_curvature_lookahead: false
+      curvature_lookahead_dist: 0.25
+      use_cost_regulated_linear_velocity_scaling: true # RPP
+      cost_scaling_dist: 0.3
+      cost_scaling_gain: 1.0
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: true
+      allow_reversing: false
+      rotate_to_heading_min_angle: 0.785
+      max_robot_pose_search_dist: 10.0
+      min_distance_to_obstacle: 0.0
+      stateful: true
+
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: True
+    smoothing_frequency: 20.0
+    scale_velocities: False
+    feedback: "OPEN_LOOP"
+    max_velocity: [0.5, 0.0, 1.0]
+    min_velocity: [-0.5, 0.0, -1.0]
+    max_accel: [0.5, 0.0, 1.0]
+    max_decel: [-0.5, 0.0, -1.0]
+    odom_topic: "odom"
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: True
+    global_frame: map
+    robot_base_frame: base_link
+    odom_topic: /odom
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    wait_for_service_timeout: 1000
+    # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
+    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
+    # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
+    # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+    plugin_lib_names:
+      - nav2_compute_path_to_pose_action_bt_node
+      - nav2_compute_path_through_poses_action_bt_node
+      - nav2_smooth_path_action_bt_node
+      - nav2_follow_path_action_bt_node
+      - nav2_spin_action_bt_node
+      - nav2_wait_action_bt_node
+      - nav2_assisted_teleop_action_bt_node
+      - nav2_back_up_action_bt_node
+      - nav2_drive_on_heading_bt_node
+      - nav2_clear_costmap_service_bt_node
+      - nav2_is_stuck_condition_bt_node
+      - nav2_goal_reached_condition_bt_node
+      - nav2_goal_updated_condition_bt_node
+      - nav2_globally_updated_goal_condition_bt_node
+      - nav2_is_path_valid_condition_bt_node
+      - nav2_initial_pose_received_condition_bt_node
+      - nav2_reinitialize_global_localization_service_bt_node
+      - nav2_rate_controller_bt_node
+      - nav2_distance_controller_bt_node
+      - nav2_speed_controller_bt_node
+      - nav2_truncate_path_action_bt_node
+      - nav2_truncate_path_local_action_bt_node
+      - nav2_goal_updater_node_bt_node
+      - nav2_recovery_node_bt_node
+      - nav2_pipeline_sequence_bt_node
+      - nav2_round_robin_node_bt_node
+      - nav2_transform_available_condition_bt_node
+      - nav2_time_expired_condition_bt_node
+      - nav2_path_expiring_timer_condition
+      - nav2_distance_traveled_condition_bt_node
+      - nav2_single_trigger_bt_node
+      - nav2_goal_updated_controller_bt_node
+      - nav2_is_battery_low_condition_bt_node
+      - nav2_navigate_through_poses_action_bt_node
+      - nav2_navigate_to_pose_action_bt_node
+      - nav2_remove_passed_goals_action_bt_node
+      - nav2_planner_selector_bt_node
+      - nav2_controller_selector_bt_node
+      - nav2_goal_checker_selector_bt_node
+      - nav2_controller_cancel_bt_node
+      - nav2_path_longer_on_approach_bt_node
+      - nav2_wait_cancel_bt_node
+      - nav2_spin_cancel_bt_node
+      - nav2_back_up_cancel_bt_node
+      - nav2_assisted_teleop_cancel_bt_node
+      - nav2_drive_on_heading_cancel_bt_node
+      - nav2_is_battery_charging_condition_bt_node
+
+bt_navigator_navigate_through_poses_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
+bt_navigator_navigate_to_pose_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
+# === Local costmap ===
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      global_frame: odom
+      robot_base_frame: base_link
+      use_sim_time: True
+      rolling_window: true
+      width: 3
+      height: 3
+      resolution: 0.05
+      robot_radius: 0.22
+      plugins: ["inflation_layer"]   # センサ使わないなら voxel_layer は外すのが安全
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
+      # voxel_layer は使わない構成なら削除（/scan無いと警告が出ます）
+
+# === Global costmap（地図なし構成）===
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 1.0
+      publish_frequency: 1.0
+      global_frame: map
+      robot_base_frame: base_link
+      use_sim_time: True
+      robot_radius: 0.22
+      resolution: 0.05
+      rolling_window: true          # ★ 追加：地図がないのでrolling windowで運用
+      width: 20                   # ★ 追加：十分広いサイズ
+      height: 20                  # ★ 追加
+      origin_x: -10.0               # ★ 追加：map中心を(0,0)にしたい場合
+      origin_y: -10.0
+      track_unknown_space: true
+      plugins: ["inflation_layer"]  # static_layer は（地図なしなら）入れない
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
+      always_send_full_costmap: True
+
+map_server:
+  ros__parameters:
+    use_sim_time: True
+    # Overridden in launch by the "map" launch configuration or provided default value.
+    # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
+    yaml_filename: ""
+
+map_saver:
+  ros__parameters:
+    use_sim_time: True
+    save_map_timeout: 5.0
+    free_thresh_default: 0.25
+    occupied_thresh_default: 0.65
+    map_subscribe_transient_local: True
+
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0
+    use_sim_time: True
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5
+      use_astar: false
+      allow_unknown: true
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: True
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      max_its: 1000
+      do_refinement: True
+
+behavior_server:
+  ros__parameters:
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
+    spin:
+      plugin: "nav2_behaviors/Spin"
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors/DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    assisted_teleop:
+      plugin: "nav2_behaviors/AssistedTeleop"
+    global_frame: odom
+    robot_base_frame: base_link
+    transform_tolerance: 0.1
+    use_sim_time: true
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
+
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: True
+
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: True
+    loop_rate: 20
+    stop_on_failure: false
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
+      waypoint_pause_duration: 200

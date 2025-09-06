@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <world name="default">
+
+    <!-- Load gazebo_ros_state plugin -->
+    <plugin filename="libgazebo_ros_state.so" name="gazebo_ros_state">
+      <!-- Set the ROS node name for the plugin -->
+      <ros>
+        <namespace>/gazebo</namespace>
+      </ros>
+    </plugin>
+
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Ground Plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+  </world>
+</sdf>

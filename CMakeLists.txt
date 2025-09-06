@@ -37,39 +37,46 @@ set(dependencies
 set(library_name nav2_dynamic_window_pure_pursuit_controller)
 
 add_library(${library_name} SHARED
-        src/dynamic_window_pure_pursuit_controller.cpp)
+  src/dynamic_window_pure_pursuit_controller.cpp
+)
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+# ライブラリ・ヘッダ
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
 install(DIRECTORY include/
   DESTINATION include/
 )
 
+# launch/, config/, world/, model/ を share に入れる（ros2 launch / パラメータで必須）
+install(DIRECTORY launch config world model
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(PROGRAMS
+  scripts/follow_path_test_gui.py
+  scripts/ground_truth_odom_tf.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# pluginlib の XML（既にエクスポートされているが install 先を確実に）
+pluginlib_export_plugin_description_file(nav2_core nav2_dynamic_window_pure_pursuit_controller.xml)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
-
-pluginlib_export_plugin_description_file(nav2_core nav2_dynamic_window_pure_pursuit_controller.xml)
 
 ament_package()

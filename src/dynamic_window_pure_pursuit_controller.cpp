@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Fumiya Onishi
+// Copyright (c) 2025 Fumiya Ohnishi
 // SPDX-License-Identifier: Apache-2.0
 
 #include "nav2_dynamic_window_pure_pursuit_controller/dynamic_window_pure_pursuit_controller.hpp"
@@ -7,8 +7,6 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <utility>
-#include <vector>
 
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -31,11 +29,6 @@ void DynamicWindowPurePursuitController::configure(
 {
   // まず親クラスのconfigureを呼び、RPPの全機能を初期化
   rpp::RegulatedPurePursuitController::configure(parent, name, tf, costmap_ros);
-
-  RCLCPP_INFO(
-    logger_,
-    "========== Dynamic Window Pure Pursuit Controller =========="
-    );
 
   auto node = parent.lock();
   if (!node) {
@@ -296,7 +289,7 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
   cmd_vel.twist.linear.x = linear_vel;
   cmd_vel.twist.angular.z = angular_vel;
 
-  last_command_velocity_ = cmd_vel;
+  last_command_velocity_ = cmd_vel.twist;
 
   return cmd_vel;
 }
