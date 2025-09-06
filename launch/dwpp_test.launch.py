@@ -23,7 +23,7 @@ def generate_launch_description():
     default_params_file = os.path.join(pkg_this,  'config', 'test_params.yaml')
     default_world_file  = os.path.join(pkg_this,  'world',  'test.world')
     default_robot_sdf   = os.path.join(pkg_this,  'model',  'tb3_wo_odom.sdf')
-    default_rviz_config = os.path.join(pkg_nav2,  'rviz',   'nav2_default_view.rviz')
+    default_rviz_config = os.path.join(pkg_this,  'rviz',   'dwpp_test.rviz')
     default_urdf_xacro  = os.path.join(pkg_tb3_desc, 'urdf', 'turtlebot3_waffle.urdf')
 
     # ====== Launch 引数 ======

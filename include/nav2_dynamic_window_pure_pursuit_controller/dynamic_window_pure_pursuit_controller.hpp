@@ -39,12 +39,10 @@ public:
 
 private:
   // 追加パラメータ
-  double desired_angular_vel_{0.5};   // new!
-  double max_linear_accel_{1.0};      // new!
-  std::string velocity_feedback_{"OPEN_LOOP"};      // new!
+  double desired_angular_vel_{0.5};
+  double max_linear_accel_{1.0};
+  std::string velocity_feedback_{"OPEN_LOOP"};
   geometry_msgs::msg::Twist last_command_velocity_;
-  // 既存RPPの desired_linear_vel / max_angular_accel は親が保持
-  // ここではオーバーライド時に取得＆利用する（configure内でget_parameter）
 };
 
 }  // namespace nav2_dynamic_window_pure_pursuit_controller

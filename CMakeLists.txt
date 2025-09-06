@@ -54,8 +54,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-# launch/, config/, world/, model/ を share に入れる（ros2 launch / パラメータで必須）
-install(DIRECTORY launch config world model
+install(DIRECTORY launch config world model rviz
   DESTINATION share/${PROJECT_NAME}
 )
 
