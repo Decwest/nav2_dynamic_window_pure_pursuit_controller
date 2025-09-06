@@ -7,6 +7,8 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <utility>
+#include <vector>
 
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -45,15 +47,14 @@ void DynamicWindowPurePursuitController::configure(
                                     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(node.get(), name + ".max_linear_accel",
                                     rclcpp::ParameterValue(0.5));
+  declare_parameter_if_not_declared(node.get(), name + ".velocity_feedback",
+                                    rclcpp::ParameterValue("OPEN_LOOP"));
 
   node->get_parameter(name + ".desired_angular_vel", desired_angular_vel_);
   node->get_parameter(name + ".max_linear_accel",    max_linear_accel_);
+  node->get_parameter(name + ".velocity_feedback",    velocity_feedback_);
 
-  // 既存パラメータ（RPP側）
-  // desired_linear_vel, max_angular_accel 等は親クラスが既に取得済み。
-  // 必要なら node->get_parameter(name + ".desired_linear_vel", desired_linear_vel_); のように参照可
 }
-
 
 void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     const double curvature,
@@ -85,6 +86,18 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
     dw_vmax = std::max(dw_vmin, regulated_linear_vel);
   }
 
+  // OK 
+  // std::cout << "A_MAX " << A_MAX << std::endl;
+  // std::cout << "V_MAX " << V_MAX << std::endl;
+  // std::cout << "AW_MAX " << AW_MAX << std::endl;
+  // std::cout << "W_MAX " << W_MAX << std::endl;
+  // std::cout << "DT " << DT << std::endl;
+  std::cout << "velocity_feedback " << velocity_feedback_ << std::endl;
+  std::cout << "allow_reversing_ " << allow_reversing_ << std::endl;
+  std::cout << "regulated v " << regulated_linear_vel << std::endl;
+  std::cout << "current linear vel " << current_speed.linear.x << std::endl;
+  std::cout << "current angular vel " << current_speed.angular.z << std::endl;
+
   const double k = curvature;
 
   // ---- 早期決定: 曲率が 0（w = 0） ----
@@ -95,7 +108,7 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
       optimal_angular_vel = 0.0;
       return;
     }
-    // w=0が外なら、|w|が小さい側を選ぶ
+    // w=0が外なら、よりw=0に近い、|w|が小さい側を選ぶ
     const double w_choice = (std::abs(dw_wmin) <= std::abs(dw_wmax)) ? dw_wmin : dw_wmax;
     optimal_linear_vel  = dw_vmax;   // 最大v
     optimal_angular_vel = w_choice;
@@ -260,7 +273,14 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
 
     // After here is original DWPP algorithm!!!
     const double regulated_linear_vel = linear_vel;
-    computeOptimalVelocityUsingDynamicWindow(curvature, speed, regulated_linear_vel, linear_vel, angular_vel);
+    if (velocity_feedback_ == "CLOSED_LOOP"){
+      // using odom velocity as a current velocity (not recommended)
+      computeOptimalVelocityUsingDynamicWindow(curvature, speed, regulated_linear_vel, linear_vel, angular_vel);
+    }
+    else{
+      // using last command velocity as a current velocity (recommended)
+      computeOptimalVelocityUsingDynamicWindow(curvature, last_command_velocity_, regulated_linear_vel, linear_vel, angular_vel);
+    }
 
   }
 
@@ -275,6 +295,9 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
   cmd_vel.header = pose.header;
   cmd_vel.twist.linear.x = linear_vel;
   cmd_vel.twist.angular.z = angular_vel;
+
+  last_command_velocity_ = cmd_vel;
+
   return cmd_vel;
 }
 

@@ -134,6 +134,7 @@ controller_server:
       desired_angular_vel: 1.0
       max_linear_accel: 0.5
       max_angular_accel: 1.0
+      velocity_feedback: "OPEN_LOOP"
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -153,8 +154,8 @@ controller_server:
       cost_scaling_gain: 1.0
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
-      use_rotate_to_heading: true
-      allow_reversing: false
+      use_rotate_to_heading: false
+      allow_reversing: true
       rotate_to_heading_min_angle: 0.785
       max_robot_pose_search_dist: 10.0
       min_distance_to_obstacle: 0.0
