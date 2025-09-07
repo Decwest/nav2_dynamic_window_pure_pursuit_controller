@@ -43,7 +43,7 @@ controller_server:
       cost_scaling_gain: 1.0
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
-      use_rotate_to_heading: true
+      use_rotate_to_heading: false # DWPP does not need rotation to heading
       allow_reversing: false
       rotate_to_heading_min_angle: 0.785
       max_robot_pose_search_dist: 10.0
@@ -57,7 +57,7 @@ velocity_smoother:
     scale_velocities: False
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 1.0]
-    min_velocity: [-0.5, 0.0, -1.0]
+    min_velocity: [0.0, 0.0, -1.0]
     max_accel: [0.5, 0.0, 1.0]
     max_decel: [-0.5, 0.0, -1.0]
     odom_topic: "odom"
