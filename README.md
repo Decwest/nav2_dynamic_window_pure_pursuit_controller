@@ -6,6 +6,9 @@
 [![ROS2 Distro: Humble](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-red.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
+![demo](comparison.gif)
+<sub>Note: Except for $v_{\max}=0.5$, $\omega_{\max}=1.0$, $a_{\max}=0.5$, $\alpha_{\max}=1.0$, and `use_rotate_to_heading=False`, all parameters are set to the default values of Nav2’s RPP.</sub>
+
 </div>
 
 Dynamic Window Pure Pursuit (DWPP) is a novel extension of the pure pursuit method that computes command velocities while taking into account the robot’s velocity and acceleration constraints.
@@ -132,9 +135,14 @@ https://docs.nav2.org/configuration/packages/configuring-regulated-pp.html
 The velocity smoother clips velocity values from `cmd_vel_nav` (published by the controller) according to velocity and acceleration constraints, and publishes `cmd_vel`.
 Therefore, `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` must match the DWPP controller’s velocity and acceleration settings.
 
+## Trying DWPP
+The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.  
+
+https://github.com/Decwest/dwpp_test_environment
+
 ## Todo
 - [ ] Support backward movement
-  - Currently, near the goal, the linear velocity oscillates within approximately ±0.05 m/s, preventing the robot from coming to a complete stop.
+  - Currently, if `allow_reversing` sets to `true`, near the goal, the linear velocity oscillates within approximately ±0.05 m/s, preventing the robot from coming to a complete stop.
 
 ## Citation
 
