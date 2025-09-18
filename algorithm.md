@@ -10,26 +10,26 @@ Fig. 1  Processing flow of conventional pure pursuit methods and the proposed me
 First, the maximum and minimum feasible linear and angular velocities at the next calculation step, denoted $v_{t+1,\max}$, $v_{t+1,\min}$, $\omega_{t+1,\max}$ and $\omega_{t+1,\min}$ are computed using the following equations:
 
 $$
-v_{t+1,\max} = \min \left( v_t + a_{\max}\Delta t, v_{\max} \right) \tag{1}
+v_{t+1,\max} = \min \left( v_t + a_{\max}\Delta t, v_{\max} \right) \quad (1)
 $$
 
 $$
-v_{t+1,\min} = \max \left( v_t - a_{\max}\Delta t, v_{\min} \right) \tag{2}
+v_{t+1,\min} = \max \left( v_t - a_{\max}\Delta t, v_{\min} \right) \quad (2)
 $$
 
 $$
-\omega_{t+1,\max} = \min \left( \omega_t + \alpha_{\max}\Delta t, \omega_{\max} \right) \tag{3}
+\omega_{t+1,\max} = \min \left( \omega_t + \alpha_{\max}\Delta t, \omega_{\max} \right) \quad (3)
 $$
 
 $$
-\omega_{t+1,\min} = \max \left( \omega_t - \alpha_{\max}\Delta t, \omega_{\min} \right) \tag{4}
+\omega_{t+1,\min} = \max \left( \omega_t - \alpha_{\max}\Delta t, \omega_{\min} \right) \quad (4)
 $$
 
 where $(v_t, \omega_t)$ are the robot’s current linear and angular velocities, respectively. The terms $v_{\max}, v_{\min}, \omega_{\max}, \omega_{\min}$ are the maximum and minimum linear and angular velocities, and $a_{\max}, \alpha_{\max}$ are the maximum linear and angular accelerations. $\Delta t$ is the control period. Next, the value $v_{t+1,\max}$ is further constrained by the regulated reference linear velocity $v_{\text{reg},t}$, computed by RPP, according to the equation:
 
 $$
 v_{t+1,\max} = \max \left( v_{t+1,\min}, v_{\text{reg},t} \right) 
-\quad \text{if } v_{t+1,\max} > v_{\text{reg},t} \tag{5}
+\quad \text{if } v_{t+1,\max} > v_{\text{reg},t}  \quad (5)
 $$
 
 From the above, the rectangle formed in $v\omega$ space by the four vertices  
