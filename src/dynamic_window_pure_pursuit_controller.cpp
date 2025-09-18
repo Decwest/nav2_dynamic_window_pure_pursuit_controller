@@ -27,7 +27,7 @@ void DynamicWindowPurePursuitController::configure(
   std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  // まず親クラスのconfigureを呼び、RPPの全機能を初期化
+  // First, call configure in the parent class to initialise all functions of the RPP
   rpp::RegulatedPurePursuitController::configure(parent, name, tf, costmap_ros);
 
   auto node = parent.lock();
@@ -35,7 +35,7 @@ void DynamicWindowPurePursuitController::configure(
     throw std::runtime_error("Failed to lock parent node in DynamicWindowPurePursuitController::configure");
   }
 
-  // 追加パラメータ（新規）
+  // Additional parameters (new)
   declare_parameter_if_not_declared(node.get(), name + ".desired_angular_vel",
                                     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(node.get(), name + ".max_linear_accel",
@@ -64,7 +64,6 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
   const double W_MAX  = desired_angular_vel_;   // W_MAX
   const double DT     = control_duration_;     // DT
 
-  // 対称上下限（必要に応じて置換）
   const double V_MIN = -V_MAX;
   const double W_MIN = -W_MAX;
 
@@ -74,33 +73,33 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
   double dw_wmax = std::min(current_speed.angular.z + AW_MAX * DT, W_MAX);
   const double dw_wmin = std::max(current_speed.angular.z - AW_MAX * DT, W_MIN);
 
-  // regulated v を反映（上限を絞る）
+  // Reflect regulated v (tighten upper limit)
   if (dw_vmax > regulated_linear_vel) {
     dw_vmax = std::max(dw_vmin, regulated_linear_vel);
   }
 
   const double k = curvature;
 
-  // ---- 早期決定: 曲率が 0（w = 0） ----
+  // ---- Curvature is 0 (w = 0) ----
   if (k == 0.0) {
-    // w=0 がDW内なら、そのまま最大並進速度を採用
+    // If w=0 is within DW, then the maximum linear speed is adopted as it is.
     if (dw_wmin <= 0.0 && 0.0 <= dw_wmax) {
-      optimal_linear_vel  = dw_vmax; // 常に最大v
+      optimal_linear_vel  = dw_vmax; // Always maximum v
       optimal_angular_vel = 0.0;
       return;
     }
-    // w=0が外なら、よりw=0に近い、|w|が小さい側を選ぶ
+    // If w=0 is outside, choose the side closer to w=0 and with smaller |w|.
     const double w_choice = (std::abs(dw_wmin) <= std::abs(dw_wmax)) ? dw_wmin : dw_wmax;
-    optimal_linear_vel  = dw_vmax;   // 最大v
+    optimal_linear_vel  = dw_vmax;   // Always maximum v
     optimal_angular_vel = w_choice;
     return;
   }
 
-  // ---- 2) 交点のうちDW内にある候補から「最大v」を1パスで選ぶ ----
-  double best_v = -1e300;     // 最大化の初期値
+  // ---- 2) Select 'max v' from the candidates in the DW among the intersections. ----
+  double best_v = -1e300;     // Initial value for maximization
   double best_w = 0.0;
 
-  // 垂直辺との交点
+  // Intersection with vertical edges
   {
     const double v1 = dw_vmin;
     const double w1 = k * v1;
@@ -116,7 +115,7 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
     }
   }
 
-  // 水平辺との交点（k != 0）
+  // Intersection with horizontal edge (k ! = 0)
   {
     const double v3 = dw_wmin / k;
     if (v3 >= dw_vmin && v3 <= dw_vmax) {
@@ -133,13 +132,13 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
   }
 
   if (best_v > -1e290) {
-    // 交点が見つかった → 最大vを採用
+    // Intersection found → Adopt max. v
     optimal_linear_vel  = best_v;
     optimal_angular_vel = best_w;
     return;
   }
 
-  // ---- 3) 交点がない場合：4頂点のうち線 w = k v へのユークリッド距離が最小のもの
+  // ---- 3) If no intersection exists: Select the one with the smallest Euclidean distance to the line w = k v among the 4 corners
   struct Corner { double v; double w; };
   const Corner corners[4] = {
     {dw_vmin, dw_wmin},
@@ -148,10 +147,10 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
     {dw_vmax, dw_wmax}
   };
 
-  const double denom = std::sqrt(k * k + 1.0); // 一度だけsqrt
+  const double denom = std::sqrt(k * k + 1.0); // Just sqrt once
 
   auto euclid_dist = [&](const Corner &c) -> double {
-    // 点 (v, w) と直線 w - k v = 0 の距離
+    // Distance from point (v, w) to line w - k v = 0
     return std::abs(k * c.v - c.w) / denom;
   };
 
@@ -161,8 +160,8 @@ void DynamicWindowPurePursuitController::computeOptimalVelocityUsingDynamicWindo
 
   for (int i = 0; i < 4; ++i) {
     const double d = euclid_dist(corners[i]);
-    // 1) より距離が小さい → 採用
-    // 2) 距離が等しい（~1e-12）→ v が大きい方（加速方針）
+    // 1) Smaller distance → Adopted
+    // 2) If distances are equal (~1e-12) → Choose the one with larger v (acceleration policy)
     if (d < best_dist || (std::abs(d - best_dist) <= 1e-12 && corners[i].v > best_v)) {
       best_dist = d;
       best_v = corners[i].v;
@@ -284,7 +283,7 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
 
 }  // namespace nav2_dynamic_window_pure_pursuit_controller
 
-// pluginlib 登録
+// pluginlib registration
 PLUGINLIB_EXPORT_CLASS(
   nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController,
   nav2_core::Controller)

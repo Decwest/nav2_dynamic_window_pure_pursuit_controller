@@ -38,7 +38,7 @@ public:
   );
 
 private:
-  // 追加パラメータ
+  // Additional parameters
   double desired_angular_vel_{0.5};
   double max_linear_accel_{1.0};
   std::string velocity_feedback_{"OPEN_LOOP"};
