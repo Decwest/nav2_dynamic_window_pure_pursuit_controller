@@ -145,8 +145,21 @@ https://github.com/Decwest/dwpp_test_environment
   - Currently, if `allow_reversing` sets to `true`, near the goal, the linear velocity oscillates within approximately ±0.05 m/s, preventing the robot from coming to a complete stop.
 
 ## Citation
+- Plain text
+```txt
+Fumiya Ohnishi and Masaki Takahashi, “Dynamic Window Pure Pursuit for Robot Path Tracking Considering Velocity and Acceleration Constraints”, Proceedings of the 19th International Conference on Intelligent Autonomous Systems, Genoa, Italy, 2025.
+```
 
-> Fumiya Ohnishi and Masaki Takahashi, “Dynamic Window Pure Pursuit for Robot Path Tracking Considering Velocity and Acceleration Constraints”, Proceedings of the 19th International Conference on Intelligent Autonomous Systems, Genoa, Italy, 2025.
+- BibTeX (DOI will be added after publication)
+```bibtex
+@inproceedings{fumiya2025dwpp,
+  author    = {Fumiya Ohnishi and Masaki Takahashi},
+  title     = {Dynamic Window Pure Pursuit for Robot Path Tracking Considering Velocity and Acceleration Constraints},
+  booktitle = {the 19th International Conference on Intelligent Autonomous Systems (IAS-19)},
+  year      = {2025},
+  address   = {Genoa, Italy}
+}
+```
 
 The paper is expected to be published in mid-January 2026. Until then, please refer to the following for an overview of the algorithm:
 
