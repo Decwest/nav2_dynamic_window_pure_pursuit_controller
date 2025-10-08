@@ -132,6 +132,13 @@ https://docs.nav2.org/configuration/packages/configuring-regulated-pp.html
 The velocity smoother clips velocity values from `cmd_vel_nav` (published by the controller) according to velocity and acceleration constraints, and publishes `cmd_vel`.
 Therefore, `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` must match the DWPP controller’s velocity and acceleration settings.
 
+### Note: For users who want the robot to move backward
+
+You can allow the robot to move in reverse by setting `allow_reversing` to `True`.
+However, in the Humble version, enabling `allow_reversing` automatically disables `use_rotate_to_heading`. As a result, the robot will no longer adjust its orientation to match the goal heading upon arrival. This can cause the system to fail to recognize that the goal has been reached, which may lead to small forward and backward oscillations near the goal.
+
+This issue is not specific to DWPP, but occurs with any Pure Pursuit controller, and it has been resolved in Jazzy and later releases. Therefore, if you want the robot to move backward, it is recommended to upgrade to Jazzy. (and I am currently working on integrating DWPP into the official Nav2 from the Jazzy release onward :) )
+
 ## Trying DWPP
 The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.  
 
