@@ -53,7 +53,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
-    progress_checker_plugins: ["progress_checker"] # progress_checker_plugin: "progress_checker" For Humble and older
+    progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["goal_checker"]
     controller_plugins: ["FollowPath"]
 
@@ -82,22 +82,19 @@ controller_server:
       use_velocity_scaled_lookahead_dist: true # use adaptive pure pursuit
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
-      use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_collision_detection: true
       use_regulated_linear_velocity_scaling: true # use regulated pure pursuit
-      use_fixed_curvature_lookahead: false
-      curvature_lookahead_dist: 0.25
       use_cost_regulated_linear_velocity_scaling: true # use regulated pure pursuit
-      cost_scaling_dist: 0.3
+      cost_scaling_dist: 0.6
       cost_scaling_gain: 1.0
+      inflation_cost_scaling_factor: 3.0
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
-      use_rotate_to_heading: false # DWPP does not need rotation to heading
+      use_rotate_to_heading: true
+      rotate_to_heading_min_angle: 3.14 # OFF since DWPP can handle steep curvature
       allow_reversing: false
-      rotate_to_heading_min_angle: 0.785
-      max_robot_pose_search_dist: 10.0
-      min_distance_to_obstacle: 0.0
-      stateful: true
+      use_interpolation: true
 
 velocity_smoother:
   ros__parameters:
@@ -121,9 +118,9 @@ velocity_smoother:
 - **desired_angular_vel** (double): maximum angular velocity (rad/s)
 - **max_linear_accel** (double): maximum linear acceleration (m/s²)
 - **max_angular_accel** (double): maximum angular acceleration (rad/s²)
-- **use_rotate_to_heading** (bool): Whether the robot rotates in place to align its heading when the orientation error is large.
-  - Recommended: `false` for DWPP, as it decelerates appropriately on sharp turns and tracks the path with minimal error.
-  - Note: In the conventional method, the default was `true` to prevent overshooting on sharp curves.
+- **rotate_to_heading_min_angle** (double): When the robot’s current heading angle deviates from the path (angle of lookahead point) by more than this value, the robot stops and performs an in-place rotation (rad).
+  - Recommended: a large value such as `3.14` for DWPP, since it decelerates properly during sharp turns and follows the path with minimal error.
+  - Note: In the conventional method, the default was `0.785` because sharp turns tended to cause large overshoot.
 - **velocity_feedback** (string, no need to change) : How the current velocity is obtained during dynamic window computation.
   - `"OPEN_LOOP"`: Uses the last commanded velocity (recommended)
   - `"CLOSED_LOOP"`: Uses odometry velocity (may hinder proper acceleration/deceleration)
@@ -139,10 +136,6 @@ Therefore, `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` must mat
 The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.  
 
 https://github.com/Decwest/dwpp_test_environment
-
-## Todo
-- [ ] Support backward movement
-  - Currently, if `allow_reversing` sets to `true`, near the goal, the linear velocity oscillates within approximately ±0.05 m/s, preventing the robot from coming to a complete stop.
 
 ## Citation
 - Plain text

@@ -19,10 +19,10 @@ controller_server:
       stateful: True
     FollowPath:
       plugin: "nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController"
-      desired_linear_vel: 0.5 # DWPP
-      desired_angular_vel: 1.0 # DWPP
-      max_linear_accel: 0.5 # DWPP
-      max_angular_accel: 1.0 # DWPP
+      desired_linear_vel: 0.5 # DWPP parameter
+      desired_angular_vel: 1.0 # DWPP parameter
+      max_linear_accel: 0.5 # DWPP parameter
+      max_angular_accel: 1.0 # DWPP parameter
       velocity_feedback: "OPEN_LOOP"
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
@@ -30,25 +30,22 @@ controller_server:
       lookahead_time: 1.5
       rotate_to_heading_angular_vel: 1.8
       transform_tolerance: 0.1
-      use_velocity_scaled_lookahead_dist: true # APP
+      use_velocity_scaled_lookahead_dist: true # use adaptive pure pursuit
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
-      use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 1.0
-      use_regulated_linear_velocity_scaling: true # RPP
-      use_fixed_curvature_lookahead: false
-      curvature_lookahead_dist: 0.25
-      use_cost_regulated_linear_velocity_scaling: true # RPP
-      cost_scaling_dist: 0.3
+      use_collision_detection: true
+      use_regulated_linear_velocity_scaling: true # use regulated pure pursuit
+      use_cost_regulated_linear_velocity_scaling: true # use regulated pure pursuit
+      cost_scaling_dist: 0.6
       cost_scaling_gain: 1.0
+      inflation_cost_scaling_factor: 3.0
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
-      use_rotate_to_heading: false # DWPP does not need rotation to heading
+      use_rotate_to_heading: true
+      rotate_to_heading_min_angle: 3.14 # OFF since DWPP can handle steep curvature
       allow_reversing: false
-      rotate_to_heading_min_angle: 0.785
-      max_robot_pose_search_dist: 10.0
-      min_distance_to_obstacle: 0.0
-      stateful: true
+      use_interpolation: true
 
 velocity_smoother:
   ros__parameters:
