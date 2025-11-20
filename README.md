@@ -68,16 +68,19 @@ controller_server:
       stateful: True
     FollowPath:
       plugin: "nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController" # change here to use DWPP plugin
-      desired_linear_vel: 0.5 # DWPP parameter
-      desired_angular_vel: 1.0 # DWPP parameter
+      max_linear_vel: 0.5 # DWPP parameter
+      min_linear_vel: 0.0 # DWPP parameter
+      max_angular_vel: 1.0 # DWPP parameter
+      min_angular_vel: 1.0 # DWPP parameter
       max_linear_accel: 0.5 # DWPP parameter
+      max_linear_decel: 0.0 # DWPP parameter
       max_angular_accel: 1.0 # DWPP parameter
+      max_angular_decel: 1.0 # DWPP parameter
       velocity_feedback: "OPEN_LOOP"
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
       lookahead_time: 1.5
-      rotate_to_heading_angular_vel: 1.8
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: true # use adaptive pure pursuit
       min_approach_linear_velocity: 0.05
@@ -112,12 +115,16 @@ velocity_smoother:
     velocity_timeout: 1.0
 ```
 
-### Key Parameters (DWPP-specific)
+### Parameter settings related to DWPP
 
-- **desired_linear_vel** (double): maximum linear velocity (m/s)
-- **desired_angular_vel** (double): maximum angular velocity (rad/s)
-- **max_linear_accel** (double): maximum linear acceleration (m/s²)
-- **max_angular_accel** (double): maximum angular acceleration (rad/s²)
+- **max_linear_vel** (double): The maximum linear velocity (m/s) to use.
+- **min_linear_vel** (double): The minimum linear velocity (m/s) to use.
+- **max_angular_vel** (double): The maximum angular velocity (rad/s) to use.
+- **min_angular_vel** (double): The minimum angular velocity (rad/s) to use.
+- **max_linear_accel** (double): The maximum linear acceleration (m/s^2) to use.
+- **max_linear_decel** (double): The maximum linear deceleration (m/s^2) to use.
+- **max_angular_accel** (double): The maximum angular acceleration (rad/s^2) to use.
+- **max_angular_decel** (double): The maximum angular deceleration (rad/s^2) to use.
 - **rotate_to_heading_min_angle** (double): When the robot’s current heading angle deviates from the path (angle of lookahead point) by more than this value, the robot stops and performs an in-place rotation (rad).
   - Recommended: a large value such as `3.14` for DWPP, since it decelerates properly during sharp turns and follows the path with minimal error.
   - Note: In the conventional method, the default was `0.785` because sharp turns tended to cause large overshoot.
@@ -137,7 +144,7 @@ Therefore, `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` must mat
 You can allow the robot to move in reverse by setting `allow_reversing` to `True`.
 However, in the Humble version, enabling `allow_reversing` automatically disables `use_rotate_to_heading`. As a result, the robot will no longer adjust its orientation to match the goal heading upon arrival. This can cause the system to fail to recognize that the goal has been reached, which may lead to small forward and backward oscillations near the goal.
 
-This issue is not specific to DWPP, but occurs with any Pure Pursuit controller, and it has been resolved in Jazzy and later releases. Therefore, if you want the robot to move backward, it is recommended to upgrade to Jazzy. (and I am currently working on integrating DWPP into the official Nav2 from the Jazzy release onward :) )
+This issue is not specific to DWPP, but occurs with any Pure Pursuit controller, and it has been resolved in Jazzy and later releases. Therefore, if you want the robot to move backward, it is recommended to upgrade to Jazzy. (and **I am currently working on integrating DWPP into the official Nav2 from the Jazzy release onward** :) )
 
 ## Trying DWPP
 The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.  
