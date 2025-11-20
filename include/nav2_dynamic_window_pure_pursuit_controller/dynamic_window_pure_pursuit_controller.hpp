@@ -8,6 +8,7 @@
 
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 namespace nav2_dynamic_window_pure_pursuit_controller
 {
@@ -80,6 +81,10 @@ public:
     double & optimal_angular_vel
   );
 
+  bool evaluateVelocityConstraints(
+    const geometry_msgs::msg::Twist & next_cmd_vel,
+    const geometry_msgs::msg::Twist & current_cmd_vel);
+
 private:
   // Additional parameters
   double max_linear_vel_{0.5};
@@ -91,7 +96,11 @@ private:
   double max_angular_accel_{1.0};
   double max_angular_decel_{1.0};
   std::string velocity_feedback_{"OPEN_LOOP"};
+  bool use_dynamic_window_{true};
   geometry_msgs::msg::Twist last_command_velocity_;
+
+  // bool publisher
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr constraints_violation_flag_publisher_;
 };
 
 }  // namespace nav2_dynamic_window_pure_pursuit_controller
