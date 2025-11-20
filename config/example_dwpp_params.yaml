@@ -19,16 +19,19 @@ controller_server:
       stateful: True
     FollowPath:
       plugin: "nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController"
-      desired_linear_vel: 0.5 # DWPP parameter
-      desired_angular_vel: 1.0 # DWPP parameter
+      max_linear_vel: 0.5 # DWPP parameter
+      min_linear_vel: 0.0 # DWPP parameter
+      max_angular_vel: 1.0 # DWPP parameter
+      min_angular_vel: -1.0 # DWPP parameter
       max_linear_accel: 0.5 # DWPP parameter
+      max_linear_decel: 0.5 # DWPP parameter
       max_angular_accel: 1.0 # DWPP parameter
+      max_angular_decel: 1.0 # DWPP parameter
       velocity_feedback: "OPEN_LOOP"
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
       lookahead_time: 1.5
-      rotate_to_heading_angular_vel: 1.8
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: true # use adaptive pure pursuit
       min_approach_linear_velocity: 0.05
