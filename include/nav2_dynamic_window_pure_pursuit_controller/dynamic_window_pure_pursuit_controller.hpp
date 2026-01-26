@@ -6,15 +6,25 @@
 
 #pragma once
 
-#include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
-#include "nav2_util/node_utils.hpp"
-
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <tuple>
 #include <utility>
 #include <limits>
+
+#include "angles/angles.h"
+#include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
+#include "nav2_core/controller_exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+
+using std::hypot;
+using std::min;
+using std::max;
+using std::abs;
+using namespace nav2_costmap_2d;  // NOLINT
 
 namespace nav2_dynamic_window_pure_pursuit_controller
 {
@@ -35,8 +45,7 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name,
-    std::shared_ptr<tf2_ros::Buffer> tf,
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
@@ -53,13 +62,15 @@ public:
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & speed,
-    nav2_core::GoalChecker * goal_checker) override;
+    const geometry_msgs::msg::Twist & velocity,
+    nav2_core::GoalChecker * /*goal_checker*/) override;
 
   /**
    * @brief Deactivate controller state machine
    */
   void deactivate() override;
+
+  void reset() override;
 
   struct DynamicWindowBounds
   {
