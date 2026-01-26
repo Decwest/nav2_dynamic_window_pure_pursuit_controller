@@ -1,3 +1,18 @@
+> [!IMPORTANT]
+> # DWPP is integrated into the official Nav2 repository!
+> 
+>👉 **Official Repository:** [navigation2/nav2_regulated_pure_pursuit_controller](https://github.com/ros-navigation/navigation2/tree/main/nav2_regulated_pure_pursuit_controller)
+> 
+> **Official Integration:** As of January 21, 2026, the DWPP algorithm has been merged into the Nav2 main branch as an optional feature of the `RegulatedPurePursuitController` plugin.
+>
+> **Binary Distribution:** Starting with ROS 2 Lyrical (scheduled for release around May 2026), Nav2 will include DWPP in its binary distribution. You will be able to use DWPP simply by running `sudo apt install ros-<distro>-navigation2`.
+>
+> **Support for Older Versions (Humble, Jazzy, etc.)**: Since DWPP is not backported to versions prior to Lyrical, please continue to use the plugin provided in **this repository** for those distributions.
+>
+> **Future Maintenance:** Following the release of Lyrical, this repository will be transitioned to a **public archive**. All future bug fixes and feature enhancements will be directed to the official Nav2 repository. I strongly recommend migrating to the official Nav2 package from ROS 2 Lyrical onwards.
+>
+
+---
 # nav2_dynamic_window_pure_pursuit_controller
 **Nav2 plugin for Dynamic Window Pure Pursuit (DWPP) controller**
 
@@ -11,16 +26,21 @@
 
 </div>
 
-Dynamic Window Pure Pursuit (DWPP) is a novel extension of the pure pursuit method that computes command velocities while taking into account the robot’s velocity and acceleration constraints.
-DWPP builds incrementally upon Regulated Pure Pursuit (RPP)—the default pure pursuit method in Nav2—so all RPP parameters can be applied in the same way to DWPP.
-An overview of the algorithm is provided here:
-[DWPP Algorithm](algorithm.md)
+Dynamic Window Pure Pursuit (DWPP) is a novel extension of the pure pursuit method that computes command velocities to track a path as accurately as possible while explicitly respecting velocity and acceleration constraints. For example, it automatically slows down in sharp turns without manual tuning, thereby reducing path tracking errors.
+
+DWPP is designed as an incremental extension of Regulated Pure Pursuit (RPP)—the default pure pursuit controller in Nav2—so all RPP parameters can be used in the same way with DWPP.
+
+The paper is available here:
+- Fumiya Ohnishi, Masaki Takahashi, **"DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints,"** arXiv:2601.15006, 2026.
+  https://arxiv.org/abs/2601.15006
+
+
 
 ## Installation
 1. Clone this repository into your `src/` directory:
 ```shell
 git clone 
-https://github.com/Decwest/nav2_dynamic_window_pure_pursuit_controller.git
+https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller.git
 ```
 
 2. Build the package:
@@ -29,9 +49,9 @@ colcon build --symlink-install
 ```
 
 > **Note**: The DWPP Controller inherits the RPP controller class from the latest Humble version of Nav2.
-If your installed Nav2 is not updated to the latest Humble release, build errors may occur.
+If your installed Nav2 is not updated to the latest release, build errors may occur.
 
-3. Configure Nav2 to use DWPP:
+1. Configure Nav2 to use DWPP:
 Set controller plugin name as `"nav2_dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController"`
 
 ```yaml
@@ -144,30 +164,50 @@ Therefore, `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` must mat
 You can allow the robot to move in reverse by setting `allow_reversing` to `True`.
 However, in the Humble version, enabling `allow_reversing` automatically disables `use_rotate_to_heading`. As a result, the robot will no longer adjust its orientation to match the goal heading upon arrival. This can cause the system to fail to recognize that the goal has been reached, which may lead to small forward and backward oscillations near the goal.
 
-This issue is not specific to DWPP, but occurs with any Pure Pursuit controller, and it has been resolved in Jazzy and later releases. Therefore, if you want the robot to move backward, it is recommended to upgrade to Jazzy. (and **I am currently working on integrating DWPP into the official Nav2 from the Jazzy release onward** :) )
+This issue is not specific to DWPP, but occurs with any Pure Pursuit controller, and it has been resolved in Jazzy and later releases. Therefore, if you want the robot to move backward, it is recommended to upgrade to Jazzy.
 
 ## Trying DWPP
-The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.  
+The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.
 
-https://github.com/Decwest/dwpp_test_environment
+https://github.com/decwest/dwpp_test_environment
 
 ## Citation
-- Plain text
+
+If you use DWPP in your research or project, please cite the latest preprint (Journal version) as the primary reference, as it covers the algorithm currently implemented in Nav2.
+
+**Primary Reference (Preprint)**
+
+```txt
+Fumiya Ohnishi and Masaki Takahashi, "DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints", arXiv preprint arXiv:2601.15006, 2026.
+```
+
+```bibtex
+@misc{ohnishi2026dwpp,
+      title={DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints}, 
+      author={Fumiya Ohnishi and Masaki Takahashi},
+      year={2026},
+      eprint={2601.15006},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2601.15006}, 
+}
+```
+
+**Conference Paper (Original Concept)**
+
+This work was first presented at IAS-19 and recommended for a special issue.
+
 ```txt
 Fumiya Ohnishi and Masaki Takahashi, “Dynamic Window Pure Pursuit for Robot Path Tracking Considering Velocity and Acceleration Constraints”, Proceedings of the 19th International Conference on Intelligent Autonomous Systems, Genoa, Italy, 2025.
 ```
 
-- BibTeX (DOI will be added after publication)
 ```bibtex
-@inproceedings{fumiya2025dwpp,
-  author    = {Fumiya Ohnishi and Masaki Takahashi},
+@inproceedings{ohnishi2025dwpp_ias,
   title     = {Dynamic Window Pure Pursuit for Robot Path Tracking Considering Velocity and Acceleration Constraints},
-  booktitle = {the 19th International Conference on Intelligent Autonomous Systems (IAS-19)},
+  author    = {Fumiya Ohnishi and Masaki Takahashi},
+  booktitle = {Proceedings of the 19th International Conference on Intelligent Autonomous Systems (IAS-19)},
   year      = {2025},
   address   = {Genoa, Italy}
 }
 ```
 
-The paper is expected to be published in mid-January 2026. Until then, please refer to the following for an overview of the algorithm:
-
-[DWPP Algorithm](algorithm.md)
