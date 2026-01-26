@@ -7,7 +7,7 @@
 >
 > **Binary Distribution:** Starting with ROS 2 Lyrical (scheduled for release around May 2026), Nav2 will include DWPP in its binary distribution. You will be able to use DWPP simply by running `sudo apt install ros-<distro>-navigation2`.
 >
-> **Support for Older Versions (Humble, Jazzy, etc.)**: Since DWPP is not backported to versions prior to Lyrical, please continue to use the plugin provided in **this repository** for those distributions.
+> **Support for Older Versions (Humble, Jazzy)**: Since DWPP is not backported to versions prior to Lyrical, please continue to use the plugin provided in **this repository** for those distributions.
 >
 > **Future Maintenance:** Following the release of Lyrical, this repository will be transitioned to a **public archive**. All future bug fixes and feature enhancements will be directed to the official Nav2 repository. I strongly recommend migrating to the official Nav2 package from ROS 2 Lyrical onwards.
 >
@@ -18,8 +18,12 @@
 
 <div align="center">
 
-[![ROS2 Distro: Humble](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-red.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+| ROS 2 Distro | Branch |
+| :--- | :--- |
+| **Humble** | [`humble`](https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller/tree/humble) |
+| **Jazzy** | [`jazzy`](https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller/tree/jazzy) |
+
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-red.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![ROS2 Distro: Humble](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
 
 ![demo](comparison.gif)
 <sub>Note: Except for $v_{\max}=0.5$, $\omega_{\max}=1.0$, $a_{\max}=0.5$, $\alpha_{\max}=1.0$, and `use_rotate_to_heading=False`, all parameters are set to the default values of Nav2’s RPP.</sub>
