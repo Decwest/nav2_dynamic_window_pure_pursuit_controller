@@ -43,8 +43,7 @@ The paper is available here:
 ## Installation
 1. Clone this repository into your `src/` directory:
 ```shell
-git clone 
-https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller.git
+git clone -b humble https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller.git
 ```
 
 2. Build the package:
