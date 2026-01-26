@@ -165,7 +165,7 @@ This issue is not specific to DWPP, but occurs with any Pure Pursuit controller,
 ## Trying DWPP
 The following repository provides simulations for comparing DWPP with conventional methods, and also includes Nav2 tutorials that run with DWPP.
 
-https://github.com/decwest/dwpp_test_environment
+[https://github.com/decwest/dwpp_test_environment](https://github.com/decwest/dwpp_test_environment/tree/humble)
 
 ## Citation
 
