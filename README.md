@@ -23,7 +23,7 @@
 | **Humble** | [`humble`](https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller/tree/humble) |
 | **Jazzy** | [`jazzy`](https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller/tree/jazzy) |
 
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-red.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![ROS2 Distro: Humble](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-red.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![ROS2 Distro: Jazzy](https://img.shields.io/badge/ROS2-Jazzy-blue.svg)](https://docs.ros.org/en/jazzy/index.html)
 
 ![demo](comparison.gif)
 <sub>Note: Except for $v_{\max}=0.5$, $\omega_{\max}=1.0$, $a_{\max}=0.5$, $\alpha_{\max}=1.0$, and `use_rotate_to_heading=False`, all parameters are set to the default values of Nav2’s RPP.</sub>
@@ -43,7 +43,7 @@ The paper is available here:
 ## Installation
 1. Clone this repository into your `src/` directory:
 ```shell
-git clone -b humble https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller.git
+git clone -b jazzy https://github.com/decwest/nav2_dynamic_window_pure_pursuit_controller.git
 ```
 
 2. Build the package:
@@ -51,7 +51,7 @@ git clone -b humble https://github.com/decwest/nav2_dynamic_window_pure_pursuit_
 colcon build --symlink-install
 ```
 
-> **Note**: The DWPP Controller inherits the RPP controller class from the latest Humble version of Nav2.
+> **Note**: The DWPP Controller inherits the RPP controller class from the latest Jazzy version of Nav2.
 If your installed Nav2 is not updated to the latest release, build errors may occur.
 
 1. Configure Nav2 to use DWPP:
