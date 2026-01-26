@@ -93,10 +93,9 @@ controller_server:
       max_angular_vel: 1.0 # DWPP parameter
       min_angular_vel: -1.0 # DWPP parameter
       max_linear_accel: 0.5 # DWPP parameter
-      max_linear_decel: 0.5 # DWPP parameter
+      max_linear_decel: -0.5 # DWPP parameter
       max_angular_accel: 1.0 # DWPP parameter
-      max_angular_decel: 1.0 # DWPP parameter
-      velocity_feedback: "OPEN_LOOP"
+      max_angular_decel: -1.0 # DWPP parameter
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -135,7 +134,7 @@ velocity_smoother:
     velocity_timeout: 1.0
 ```
 
-### Parameter settings related to DWPP
+### Parameter Settings
 
 - **max_linear_vel** (double): The maximum linear velocity (m/s) to use.
 - **min_linear_vel** (double): The minimum linear velocity (m/s) to use.
@@ -145,12 +144,6 @@ velocity_smoother:
 - **max_linear_decel** (double): The maximum linear deceleration (m/s^2) to use.
 - **max_angular_accel** (double): The maximum angular acceleration (rad/s^2) to use.
 - **max_angular_decel** (double): The maximum angular deceleration (rad/s^2) to use.
-- **rotate_to_heading_min_angle** (double): When the robot’s current heading angle deviates from the path (angle of lookahead point) by more than this value, the robot stops and performs an in-place rotation (rad).
-  - Recommended: a large value such as `3.14` for DWPP, since it decelerates properly during sharp turns and follows the path with minimal error.
-  - Note: In the conventional method, the default was `0.785` because sharp turns tended to cause large overshoot.
-- **velocity_feedback** (string, no need to change) : How the current velocity is obtained during dynamic window computation.
-  - `"OPEN_LOOP"`: Uses the last commanded velocity (recommended)
-  - `"CLOSED_LOOP"`: Uses odometry velocity (may hinder proper acceleration/deceleration)
 
 Other parameter settings are same as RPP:
 https://docs.nav2.org/configuration/packages/configuring-regulated-pp.html

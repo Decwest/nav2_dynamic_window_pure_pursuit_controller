@@ -102,10 +102,9 @@ controller_server:
       max_angular_vel: 1.0 # DWPP parameter
       min_angular_vel: -1.0 # DWPP parameter
       max_linear_accel: 0.5 # DWPP parameter
-      max_linear_decel: 0.5 # DWPP parameter
+      max_linear_decel: -0.5 # DWPP parameter
       max_angular_accel: 1.0 # DWPP parameter
-      max_angular_decel: 1.0 # DWPP parameter
-      velocity_feedback: "OPEN_LOOP"
+      max_angular_decel: -1.0 # DWPP parameter
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9

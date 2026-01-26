@@ -3,11 +3,6 @@
 
 #include "nav2_dynamic_window_pure_pursuit_controller/dynamic_window_pure_pursuit_controller.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <limits>
-
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -42,7 +37,7 @@ void DynamicWindowPurePursuitController::configure(
     rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
     node.get(), name + ".min_linear_vel",
-    rclcpp::ParameterValue(0.0));
+    rclcpp::ParameterValue(-0.0));
   declare_parameter_if_not_declared(
     node.get(), name + ".max_angular_vel",
     rclcpp::ParameterValue(1.0));
@@ -54,16 +49,13 @@ void DynamicWindowPurePursuitController::configure(
     rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
     node.get(), name + ".max_linear_decel",
-    rclcpp::ParameterValue(0.5));
+    rclcpp::ParameterValue(-0.5));
   declare_parameter_if_not_declared(
     node.get(), name + ".max_angular_accel",
     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
     node.get(), name + ".max_angular_decel",
-    rclcpp::ParameterValue(1.0));
-  declare_parameter_if_not_declared(
-    node.get(), name + ".velocity_feedback",
-    rclcpp::ParameterValue("OPEN_LOOP"));
+    rclcpp::ParameterValue(-1.0));
 
   node->get_parameter(name + ".max_linear_vel", max_linear_vel_);
   desired_linear_vel_ = max_linear_vel_;
@@ -76,232 +68,7 @@ void DynamicWindowPurePursuitController::configure(
   node->get_parameter(name + ".max_linear_decel", max_linear_decel_);
   node->get_parameter(name + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(name + ".max_angular_decel", max_angular_decel_);
-  node->get_parameter(name + ".velocity_feedback", velocity_feedback_);
 
-}
-
-void DynamicWindowPurePursuitController::computeDynamicWindow(
-  const geometry_msgs::msg::Twist & current_speed,
-  double & dynamic_window_max_linear_vel,
-  double & dynamic_window_min_linear_vel,
-  double & dynamic_window_max_angular_vel,
-  double & dynamic_window_min_angular_vel
-)
-{
-  const double & max_linear_vel = max_linear_vel_;
-  const double & min_linear_vel = min_linear_vel_;
-  const double & max_angular_vel = max_angular_vel_;
-  const double & min_angular_vel = min_angular_vel_;
-
-  const double & max_linear_accel = max_linear_accel_;
-  const double & max_linear_decel = max_linear_decel_;
-  const double & max_angular_accel = max_angular_accel_;
-  const double & max_angular_decel = max_angular_decel_;
-
-  const double & dt = control_duration_;
-
-  constexpr double Eps = 1e-2;
-
-  // function to compute dynamic window for a single dimension
-  auto compute_window = [&](const double & current_vel, const double & max_vel,
-      const double & min_vel,
-      const double & max_accel, const double & max_decel,
-      double & dynamic_window_max_vel, double & dynamic_window_min_vel)
-    {
-      double candidate_max_vel = 0.0;
-      double candidate_min_vel = 0.0;
-
-      if (current_vel > Eps) {
-        // if the current velocity is positive, acceleration means an increase in speed
-        candidate_max_vel = current_vel + max_accel * dt;
-        candidate_min_vel = current_vel - max_decel * dt;
-      } else if (current_vel < -Eps) {
-        // if the current velocity is negative, acceleration means a decrease in speed
-        candidate_max_vel = current_vel + max_decel * dt;
-        candidate_min_vel = current_vel - max_accel * dt;
-      } else {
-        // if the current velocity is zero, allow acceleration in both directions.
-        candidate_max_vel = current_vel + max_accel * dt;
-        candidate_min_vel = current_vel - max_accel * dt;
-      }
-
-      // clip to max/min velocity limits
-      dynamic_window_max_vel = std::min(candidate_max_vel, max_vel);
-      dynamic_window_min_vel = std::max(candidate_min_vel, min_vel);
-    };
-
-  // linear velocity
-  compute_window(
-    current_speed.linear.x,
-    max_linear_vel, min_linear_vel,
-    max_linear_accel, max_linear_decel,
-    dynamic_window_max_linear_vel,
-    dynamic_window_min_linear_vel);
-
-  // angular velocity
-  compute_window(
-    current_speed.angular.z,
-    max_angular_vel, min_angular_vel,
-    max_angular_accel, max_angular_decel,
-    dynamic_window_max_angular_vel,
-    dynamic_window_min_angular_vel);
-}
-
-void DynamicWindowPurePursuitController::applyRegulationToDynamicWindow(
-  const double & regulated_linear_vel,
-  double & dynamic_window_max_linear_vel,
-  double & dynamic_window_min_linear_vel)
-{
-  // Extract the portion of the dynamic window that lies within the range [0, regulated_linear_vel]
-  double dynamic_window_max_linear_vel_temp;
-  double dynamic_window_min_linear_vel_temp;
-  if (regulated_linear_vel >= 0.0) {
-    dynamic_window_max_linear_vel_temp = std::min(
-      dynamic_window_max_linear_vel, regulated_linear_vel);
-    dynamic_window_min_linear_vel_temp = std::max(
-      dynamic_window_min_linear_vel, 0.0);
-  } else {
-    dynamic_window_max_linear_vel_temp = std::min(
-      dynamic_window_max_linear_vel, 0.0);
-    dynamic_window_min_linear_vel_temp = std::max(
-      dynamic_window_min_linear_vel, regulated_linear_vel);
-  }
-
-  if (dynamic_window_max_linear_vel_temp >= dynamic_window_min_linear_vel_temp) {
-    dynamic_window_max_linear_vel = dynamic_window_max_linear_vel_temp;
-    dynamic_window_min_linear_vel = dynamic_window_min_linear_vel_temp;
-  } else {
-    // No valid portion of the dynamic window remains after applying the regulation
-    if (dynamic_window_min_linear_vel > 0.0) {
-      // If the dynamic window is entirely in the positive range,
-      // collapse both bounds to dynamic_window_min_linear_vel
-      dynamic_window_max_linear_vel = dynamic_window_min_linear_vel;
-    } else {
-      // If the dynamic window is entirely in the negative range,
-      // collapse both bounds to dynamic_window_max_linear_vel
-      dynamic_window_min_linear_vel = dynamic_window_max_linear_vel;
-    }
-  }
-
-  return;
-}
-
-void DynamicWindowPurePursuitController::computeOptimalVelocityWithinDynamicWindow(
-  const double & dynamic_window_max_linear_vel,
-  const double & dynamic_window_min_linear_vel,
-  const double & dynamic_window_max_angular_vel,
-  const double & dynamic_window_min_angular_vel,
-  const double & curvature,
-  const double & sign,
-  double & optimal_linear_vel,
-  double & optimal_angular_vel
-)
-{
-  // consider linear_vel - angular_vel space (horizontal and vertical axes respectively)
-  // Select the closest point to the line
-  // angular_vel = curvature * linear_vel within the dynamic window.
-  // If multiple points are equally close, select the one with the largest linear_vel.
-
-  // When curvature == 0, the line is angular_vel = 0
-  if (abs(curvature) < 1e-3) {
-    // linear velocity
-    if (sign >= 0.0) {
-      // If moving forward, select the max linear vel
-      optimal_linear_vel = dynamic_window_max_linear_vel;
-    } else {
-      // If moving backward, select the min linear vel
-      optimal_linear_vel = dynamic_window_min_linear_vel;
-    }
-
-    // angular velocity
-    // If the line angular_vel = 0 intersects the dynamic window,angular_vel = 0.0
-    if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
-      optimal_angular_vel = 0.0;
-    } else {
-      // If not, select angular vel within dynamic window closest to 0
-      if (std::abs(dynamic_window_min_angular_vel) <= std::abs(dynamic_window_max_angular_vel)) {
-        optimal_angular_vel = dynamic_window_min_angular_vel;
-      } else {
-        optimal_angular_vel = dynamic_window_max_angular_vel;
-      }
-    }
-    return;
-  }
-
-  // When the dynamic window and the line angular_vel = curvature * linear_vel intersect,
-  // select the intersection point that yields the highest linear velocity.
-
-  // List the four candidate intersection points
-  std::pair<double, double> candidates[] = {
-    {dynamic_window_min_linear_vel, curvature * dynamic_window_min_linear_vel},
-    {dynamic_window_max_linear_vel, curvature * dynamic_window_max_linear_vel},
-    {dynamic_window_min_angular_vel / curvature, dynamic_window_min_angular_vel},
-    {dynamic_window_max_angular_vel / curvature, dynamic_window_max_angular_vel}
-  };
-
-  double best_linear_vel = -std::numeric_limits<double>::infinity() * sign;
-  double best_angular_vel = 0.0;
-
-  for (auto [linear_vel, angular_vel] : candidates) {
-    // Check whether the candidate lies within the dynamic window
-    if (linear_vel >= dynamic_window_min_linear_vel &&
-      linear_vel <= dynamic_window_max_linear_vel &&
-      angular_vel >= dynamic_window_min_angular_vel &&
-      angular_vel <= dynamic_window_max_angular_vel)
-    {
-      // Select the candidate with the largest linear velocity (considering moving direction)
-      if (linear_vel * sign > best_linear_vel * sign) {
-        best_linear_vel = linear_vel;
-        best_angular_vel = angular_vel;
-      }
-    }
-  }
-
-  // If best_linear_vel was updated, it means that a valid intersection exists
-  if (best_linear_vel != -std::numeric_limits<double>::infinity() * sign) {
-    optimal_linear_vel = best_linear_vel;
-    optimal_angular_vel = best_angular_vel;
-    return;
-  }
-
-  // When the dynamic window and the line angular_vel = curvature * linear_vel have no intersection,
-  // select the point within the dynamic window that is closest to the line.
-
-  // Because the dynamic window is a convex region,
-  // the closest point must be one of its four corners.
-  const std::array<std::array<double, 2>, 4> corners = {{
-    {dynamic_window_min_linear_vel, dynamic_window_min_angular_vel},
-    {dynamic_window_min_linear_vel, dynamic_window_max_angular_vel},
-    {dynamic_window_max_linear_vel, dynamic_window_min_angular_vel},
-    {dynamic_window_max_linear_vel, dynamic_window_max_angular_vel}
-  }};
-
-  // Compute the distance from a point (linear_vel, angular_vel)
-  // to the line angular_vel = curvature * linear_vel
-  const double denom = std::sqrt(curvature * curvature + 1.0);
-  auto compute_dist = [&](const std::array<double, 2> & corner) -> double {
-      return std::abs(curvature * corner[0] - corner[1]) / denom;
-    };
-
-  double closest_dist = std::numeric_limits<double>::infinity();
-  best_linear_vel = -std::numeric_limits<double>::infinity() * sign;
-  best_angular_vel = 0.0;
-
-  for (const auto & corner : corners) {
-    const double dist = compute_dist(corner);
-    // Update if this corner is closer to the line,
-    // or equally close but has a larger linear velocity (considering moving direction)
-    if (dist < closest_dist ||
-      (std::abs(dist - closest_dist) <= 1e-3 && corner[0] * sign > best_linear_vel * sign))
-    {
-      closest_dist = dist;
-      best_linear_vel = corner[0];
-      best_angular_vel = corner[1];
-    }
-  }
-
-  optimal_linear_vel = best_linear_vel;
-  optimal_angular_vel = best_angular_vel;
 }
 
 geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelocityCommands(
@@ -378,50 +145,33 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
       costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
       linear_vel, sign);
 
-    // Conventional Pure Pursuit
+    // Conventional Pure Pursuit:
     // Apply curvature to angular velocity after constraining linear velocity
     // angular_vel = linear_vel * curvature;
 
-    // After here is original DWPP algorithm!!!
+    // Dynamic Window Pure Pursuit:
     // compute optimal path tracking velocity commands
     // considering velocity and acceleration constraints (DWPP)
+
     const double regulated_linear_vel = linear_vel;
-    geometry_msgs::msg::Twist current_speed;
-    if (velocity_feedback_ == "CLOSED_LOOP") {
-      // using odom velocity as a current velocity (not recommended)
-      current_speed = speed;
-    } else {
-      // using last command velocity as a current velocity (recommended)
-      current_speed = last_command_velocity_;
-    }
-    double dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
-      dynamic_window_max_angular_vel, dynamic_window_min_angular_vel;
+    // using last command velocity as a current velocity
+    const geometry_msgs::msg::Twist current_speed = last_command_velocity_;
 
-    // compute Dynamic Window
-    computeDynamicWindow(
+    std::tie(linear_vel, angular_vel) =
+      DynamicWindowPurePursuitController::computeDynamicWindowVelocities(
       current_speed,
-      dynamic_window_max_linear_vel,
-      dynamic_window_min_linear_vel,
-      dynamic_window_max_angular_vel,
-      dynamic_window_min_angular_vel);
-
-    // apply regulation to Dynamic Window
-    applyRegulationToDynamicWindow(
+      max_linear_vel_,
+      min_linear_vel_,
+      max_angular_vel_,
+      min_angular_vel_,
+      max_linear_accel_,
+      max_linear_decel_,
+      max_angular_accel_,
+      max_angular_decel_,
       regulated_linear_vel,
-      dynamic_window_max_linear_vel,
-      dynamic_window_min_linear_vel);
-
-    // compute optimal velocity within Dynamic Window
-    computeOptimalVelocityWithinDynamicWindow(
-      dynamic_window_max_linear_vel,
-      dynamic_window_min_linear_vel,
-      dynamic_window_max_angular_vel,
-      dynamic_window_min_angular_vel,
       curvature,
       sign,
-      linear_vel,
-      angular_vel
-    );
+      control_duration_);
   }
 
   // Collision checking on this velocity heading
@@ -436,9 +186,24 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
   cmd_vel.twist.linear.x = linear_vel;
   cmd_vel.twist.angular.z = angular_vel;
 
+  // For dynamic window scaling in open-loop speed control
   last_command_velocity_ = cmd_vel.twist;
 
   return cmd_vel;
+}
+
+void DynamicWindowPurePursuitController::deactivate()
+{
+  RCLCPP_INFO(
+    logger_,
+    "Deactivating controller: %s of type "
+    "dynamic_window_pure_pursuit_controller::DynamicWindowPurePursuitController",
+    plugin_name_.c_str());
+  global_path_pub_->on_deactivate();
+  carrot_pub_->on_deactivate();
+  carrot_arc_pub_->on_deactivate();
+  dyn_params_handler_.reset();
+  last_command_velocity_ = geometry_msgs::msg::Twist();
 }
 
 }  // namespace nav2_dynamic_window_pure_pursuit_controller
