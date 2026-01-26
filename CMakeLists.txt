@@ -54,7 +54,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY launch config world model rviz
+install(DIRECTORY launch config world model rviz urdf
   DESTINATION share/${PROJECT_NAME}
 )
 

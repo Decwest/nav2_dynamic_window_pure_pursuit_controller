@@ -20,20 +20,7 @@ from nav_msgs.msg import Path, Odometry
 from nav2_msgs.action import FollowPath
 from visualization_msgs.msg import Marker, MarkerArray
 
-# --- Gazebo services (両対応) ---
-try:
-    from gazebo_msgs.srv import SetEntityState as _SetEntityState
-    from gazebo_msgs.msg import EntityState as _EntityState
-except Exception:
-    _SetEntityState = None
-    _EntityState = None
-
-try:
-    from gazebo_msgs.srv import SetModelState as _SetModelState
-    from gazebo_msgs.msg import ModelState as _ModelState
-except Exception:
-    _SetModelState = None
-    _ModelState = None
+from ros_gz_interfaces.srv import SetEntityPose  # Gazebo Sim (Ignition) の set_pose サービス
 
 
 def yaw_to_quat(z_yaw_rad: float):
@@ -78,11 +65,12 @@ def make_path(frame_id: str):
 
 
 class FollowPathClient(Node):
-    def __init__(self, frame_id: str = "map"):
+    def __init__(self, frame_id: str = "map", world_name: str = "test"):
         super().__init__('follow_path_gui_client')
         self._client = ActionClient(self, FollowPath, '/follow_path')
         self._current_goal_handle = None
         self._frame_id = frame_id
+        self._world_name = world_name
 
         # --- QoS（RVizに残るように TRANSIENT_LOCAL） ---
         latched_qos = QoSProfile(
@@ -126,9 +114,8 @@ class FollowPathClient(Node):
         # /odom 購読（SensorData QoS）
         self._odom_sub = self.create_subscription(Odometry, '/odom', self._on_odom, qos_profile_sensor_data)
 
-        # Gazebo warp clients
-        self._gz_entity_cli = None
-        self._gz_model_cli  = None
+        # Gazebo warp client
+        self._gz_setpose_cli = None  # /world/<world>/set_pose 用
 
         # 起動直後：初期姿勢 & tb3 ワープ & パス定期描画
         threading.Thread(target=self._auto_publish_initial_pose, daemon=True).start()
@@ -281,12 +268,11 @@ class FollowPathClient(Node):
 
     # ===== Gazebo warp =====
     def _ensure_gazebo_clients(self):
-        if _SetEntityState and self._gz_entity_cli is None:
-            self._gz_entity_cli = self.create_client(_SetEntityState, '/gazebo/set_entity_state')
-        if _SetModelState and self._gz_model_cli is None:
-            self._gz_model_cli = self.create_client(_SetModelState, '/gazebo/set_model_state')
+        if self._gz_setpose_cli is None:
+            service_name = f'/world/{self._world_name}/set_pose'
+            self._gz_setpose_cli = self.create_client(SetEntityPose, service_name)
 
-    def warp_model(self, model_name: str = 'tb3', x: float = 0.0, y: float = 0.0, z: float = 0.0, yaw_rad: float = 0.0):
+    def warp_model(self, model_name: str = 'turtlebot3_waffle', x: float = 0.0, y: float = 0.0, z: float = 0.0, yaw_rad: float = 0.0):
         # Warp の前に記録OFF（Warp移動は記録しない）
         with self._traj_lock:
             self._recording = False
@@ -294,53 +280,43 @@ class FollowPathClient(Node):
         self._ensure_gazebo_clients()
         _, _, qz, qw = yaw_to_quat(yaw_rad)
 
-        def _log_result(api_name: str, fut):
+        if not self._gz_setpose_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error("Gazebo Sim set_pose service not available. Is ros_gz_bridge running?")
+            return False
+
+        # SetEntityPose リクエスト（name 指定のみ）
+        req = SetEntityPose.Request()
+        req.entity.name = model_name
+        # entity.type は設定しない（Gazeboが名前から自動判別）
+        req.pose.position.x = float(x)
+        req.pose.position.y = float(y)
+        req.pose.position.z = float(z)
+        req.pose.orientation.x = 0.0
+        req.pose.orientation.y = 0.0
+        req.pose.orientation.z = qz
+        req.pose.orientation.w = qw
+        fut = self._gz_setpose_cli.call_async(req)
+
+        def _done(f):
             try:
-                res = fut.result()
-                if res is not None:
-                    self.get_logger().info(f"Warped '{model_name}' via {api_name} to ({x:.2f},{y:.2f},{z:.2f})")
+                result = f.result()
+                if result.success:
+                    self.get_logger().info(
+                        f"Warped '{model_name}' via /world/{self._world_name}/set_pose to ({x:.2f},{y:.2f},{z:.2f})")
                 else:
-                    self.get_logger().warn(f"{api_name} returned None")
+                    self.get_logger().warn(
+                        f"set_pose returned success=False for '{model_name}'. Check entity name with 'gz model --list'")
             except Exception as e:
-                self.get_logger().warn(f"{api_name} failed: {e}")
+                self.get_logger().warn(f"set_pose failed: {e}")
 
-        if self._gz_entity_cli is not None and self._gz_entity_cli.wait_for_service(timeout_sec=0.5):
-            req = _SetEntityState.Request()
-            state = _EntityState()
-            state.name = model_name
-            state.reference_frame = 'world'
-            state.pose.position.x = float(x)
-            state.pose.position.y = float(y)
-            state.pose.position.z = float(z)
-            state.pose.orientation.z = qz
-            state.pose.orientation.w = qw
-            req.state = state
-            fut = self._gz_entity_cli.call_async(req)
-            fut.add_done_callback(lambda f: _log_result('set_entity_state', f))
-            return True
-
-        if self._gz_model_cli is not None and self._gz_model_cli.wait_for_service(timeout_sec=0.5):
-            req = _SetModelState.Request()
-            ms = _ModelState()
-            ms.model_name = model_name
-            ms.reference_frame = 'world'
-            ms.pose.position.x = float(x)
-            ms.pose.position.y = float(y)
-            ms.pose.position.z = float(z)
-            ms.pose.orientation.z = qz
-            ms.pose.orientation.w = qw
-            req.model_state = ms
-            fut = self._gz_model_cli.call_async(req)
-            fut.add_done_callback(lambda f: _log_result('set_model_state', f))
-            return True
-
-        self.get_logger().error("Gazebo set_state services not available. Is Gazebo (Classic) running?")
-        return False
+        fut.add_done_callback(_done)
+        return True
 
     def _auto_warp_tb3(self):
         time.sleep(1.5)
         try:
-            self.warp_model('tb3', 0.0, 0.0, 0.0, 0.0)
+            # 起動直後に turtlebot3_waffle を原点へテレポート (z=0.1)
+            self.warp_model('turtlebot3_waffle', 0.0, 0.0, 0.1, 0.0)
         except Exception as e:
             self.get_logger().warn(f"Auto-warp failed: {e}")
 
@@ -438,7 +414,6 @@ class AppGUI:
         self.controller_cb.grid(row=0, column=1, padx=6)
 
         self.goal_checker_id = "goal_checker"
-        tk.Label(frm, text=f"Goal checker: {self.goal_checker_id}", font=("Arial", 20)).grid(row=1, column=0, columnspan=2, pady=8)
 
         # Buttons row
         btn_row = tk.Frame(self.root); btn_row.pack(pady=(8, 12))
@@ -469,9 +444,10 @@ class AppGUI:
 
     def _on_warp_tb3(self):
         try:
-            ok = self.node.warp_model('tb3', 0.0, 0.0, 0.0, 0.0)
+            # z=0.1 でスポーンされるのでワープ先も同じ高さに
+            ok = self.node.warp_model('turtlebot3_waffle', 0.0, 0.0, 0.1, 0.0)
             if not ok:
-                messagebox.showwarning("Warp", "Failed to warp tb3. Check Gazebo services.")
+                messagebox.showwarning("Warp", "Failed to warp turtlebot3_waffle. Check Gazebo services.")
         except Exception as e:
             messagebox.showerror("Warp Error", str(e))
 
@@ -501,6 +477,7 @@ def main():
     rclpy.init()
 
     frame_id = "map"
+    world_name = "test"  # ワールド名（test.sdfの<world name="test">と一致）
     path_A, path_B, path_C = make_path(frame_id)
 
     paths = {
@@ -509,7 +486,7 @@ def main():
         "Path C (135 deg)": path_C,
     }
 
-    node = FollowPathClient(frame_id=frame_id)
+    node = FollowPathClient(frame_id=frame_id, world_name=world_name)
     # === 安全な executor / spin ===
     executor = MultiThreadedExecutor()
     executor.add_node(node)

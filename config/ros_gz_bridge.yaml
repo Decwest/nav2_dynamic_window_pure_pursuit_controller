@@ -1,0 +1,14 @@
+# ros_gz_bridge configuration for TurtleBot3 Waffle
+- ros_topic_name: "/odom"
+  gz_topic_name: "/model/turtlebot3_waffle/odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  lazy: true
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/tf"
+  gz_topic_name: "/model/turtlebot3_waffle/pose"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  lazy: true
+  direction: GZ_TO_ROS
