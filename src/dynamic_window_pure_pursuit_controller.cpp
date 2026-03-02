@@ -7,6 +7,7 @@
 #include <ctime>
 #include <filesystem>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -20,6 +21,7 @@
 #error "Neither nav2_core/controller_exceptions.hpp nor nav2_core/exceptions.hpp was found."
 #endif
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/utils.hpp"
@@ -109,6 +111,9 @@ void DynamicWindowPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node.get(), name + ".csv_filename_prefix",
     rclcpp::ParameterValue(std::string("dwpp_nav2")));
+  declare_parameter_if_not_declared(
+    node.get(), name + ".csv_pose_frame",
+    rclcpp::ParameterValue(std::string("map")));
 
   node->get_parameter(name + ".max_linear_vel", max_linear_vel_);
   desired_linear_vel_ = max_linear_vel_;
@@ -124,6 +129,7 @@ void DynamicWindowPurePursuitController::configure(
   node->get_parameter(name + ".enable_csv_logging", enable_csv_logging_);
   node->get_parameter(name + ".csv_log_directory", csv_log_directory_);
   node->get_parameter(name + ".csv_filename_prefix", csv_filename_prefix_);
+  node->get_parameter(name + ".csv_pose_frame", csv_pose_frame_);
 
   if (enable_csv_logging_) {
     if (csv_log_directory_.empty()) {
@@ -271,9 +277,19 @@ geometry_msgs::msg::TwistStamped DynamicWindowPurePursuitController::computeVelo
   if (enable_csv_logging_ && used_dwpp) {
     const bool constraints_violation =
       evaluateVelocityConstraints(cmd_vel.twist, last_command_velocity_);
+    rclcpp::Time log_stamp(pose.header.stamp);
+    if (log_stamp.nanoseconds() == 0) {
+      log_stamp = rclcpp::Clock(RCL_SYSTEM_TIME).now();
+    }
+    geometry_msgs::msg::PoseStamped pose_in_map;
+    const bool map_pose_valid = !csv_pose_frame_.empty() &&
+      nav2_util::transformPoseInTargetFrame(
+      pose, pose_in_map, *tf_, csv_pose_frame_, costmap_ros_->getTransformTolerance());
     writeCsvLogLine(
-      pose.header.stamp,
+      log_stamp,
       pose,
+      pose_in_map,
+      map_pose_valid,
       speed,
       last_command_velocity_,
       cmd_vel.twist,
@@ -380,6 +396,8 @@ bool DynamicWindowPurePursuitController::evaluateVelocityConstraints(
 void DynamicWindowPurePursuitController::writeCsvLogLine(
   const rclcpp::Time & stamp,
   const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::PoseStamped & map_pose,
+  bool map_pose_valid,
   const geometry_msgs::msg::Twist & speed,
   const geometry_msgs::msg::Twist & current_cmd_vel,
   const geometry_msgs::msg::Twist & cmd_velocity,
@@ -400,7 +418,7 @@ void DynamicWindowPurePursuitController::writeCsvLogLine(
 
   if (!csv_header_written_) {
     csv_stream_
-      << "sec,nsec,x,y,yaw,"
+      << "sec,nsec,x,y,yaw,map_x,map_y,map_yaw,map_pose_valid,"
       << "v_real,w_real,v_now,w_now,v_cmd,w_cmd,v_nav,w_nav,"
       << "velocity_violation,curvature,dw_v_max,dw_v_min,dw_w_max,dw_w_min,v_reg\n";
     csv_header_written_ = true;
@@ -454,6 +472,10 @@ void DynamicWindowPurePursuitController::writeCsvLogLine(
 
   const auto sec = static_cast<int32_t>(stamp.seconds());
   const auto nsec = static_cast<uint32_t>(stamp.nanoseconds() % 1000000000LL);
+  const double map_x = map_pose_valid ? map_pose.pose.position.x : std::numeric_limits<double>::quiet_NaN();
+  const double map_y = map_pose_valid ? map_pose.pose.position.y : std::numeric_limits<double>::quiet_NaN();
+  const double map_yaw = map_pose_valid ? tf2::getYaw(map_pose.pose.orientation) :
+    std::numeric_limits<double>::quiet_NaN();
 
   csv_stream_ << sec << ","
               << nsec << ","
@@ -461,6 +483,10 @@ void DynamicWindowPurePursuitController::writeCsvLogLine(
               << pose.pose.position.x << ","
               << pose.pose.position.y << ","
               << tf2::getYaw(pose.pose.orientation) << ","
+              << map_x << ","
+              << map_y << ","
+              << map_yaw << ","
+              << (map_pose_valid ? 1 : 0) << ","
               << speed.linear.x << ","
               << speed.angular.z << ","
               << current_cmd_vel.linear.x << ","

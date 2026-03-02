@@ -362,6 +362,8 @@ private:
   void writeCsvLogLine(
     const rclcpp::Time & stamp,
     const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & map_pose,
+    bool map_pose_valid,
     const geometry_msgs::msg::Twist & speed,
     const geometry_msgs::msg::Twist & current_cmd_vel,
     const geometry_msgs::msg::Twist & cmd_velocity,
@@ -382,6 +384,7 @@ private:
   bool enable_csv_logging_ {false};
   std::string csv_log_directory_ {"/tmp"};
   std::string csv_filename_prefix_ {"dwpp_log"};
+  std::string csv_pose_frame_ {"map"};
   bool csv_header_written_ {false};
   std::ofstream csv_stream_;
   geometry_msgs::msg::Twist last_command_velocity_;
