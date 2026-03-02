@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(nav2_dynamic_window_pure_pursuit_controller)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
@@ -22,6 +23,7 @@ include_directories(
 )
 
 set(dependencies
+  ament_index_cpp
   rclcpp
   geometry_msgs
   nav2_costmap_2d

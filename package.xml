@@ -9,6 +9,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>ament_index_cpp</depend>
   <depend>nav2_common</depend>
   <depend>nav2_core</depend>
   <depend>nav2_util</depend>
@@ -16,6 +17,7 @@
   <depend>nav2_regulated_pure_pursuit_controller</depend>
   <depend>rclcpp</depend>
   <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>pluginlib</depend>
   <depend>tf2</depend>

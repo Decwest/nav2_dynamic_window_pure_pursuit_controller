@@ -27,6 +27,9 @@ controller_server:
       max_linear_decel: -0.5 # DWPP parameter
       max_angular_accel: 1.0 # DWPP parameter
       max_angular_decel: -1.0 # DWPP parameter
+      enable_csv_logging: false # DWPP parameter
+      csv_log_directory: "" # DWPP parameter (empty -> package share/data)
+      csv_filename_prefix: "dwpp_nav2" # DWPP parameter
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9

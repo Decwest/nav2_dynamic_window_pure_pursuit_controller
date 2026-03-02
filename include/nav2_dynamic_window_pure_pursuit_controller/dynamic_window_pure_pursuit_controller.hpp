@@ -9,12 +9,18 @@
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_util/node_utils.hpp"
 
-#include <string>
-#include <vector>
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <fstream>
 #include <tuple>
 #include <utility>
 #include <limits>
+#include <string>
+#include <vector>
+
+#include "nav_msgs/msg/path.hpp"
+#include "rclcpp/time.hpp"
 
 namespace nav2_dynamic_window_pure_pursuit_controller
 {
@@ -56,10 +62,14 @@ public:
     const geometry_msgs::msg::Twist & speed,
     nav2_core::GoalChecker * goal_checker) override;
 
+  void setPlan(const nav_msgs::msg::Path & path) override;
+
   /**
    * @brief Deactivate controller state machine
    */
   void deactivate() override;
+
+  void cleanup() override;
 
   struct DynamicWindowBounds
   {
@@ -343,6 +353,23 @@ public:
   }
 
 private:
+  bool evaluateVelocityConstraints(
+    const geometry_msgs::msg::Twist & next_cmd_vel,
+    const geometry_msgs::msg::Twist & current_cmd_vel) const;
+
+  void openNewCsvLogFile(const rclcpp::Time & stamp);
+  void closeCsvLogFile();
+  void writeCsvLogLine(
+    const rclcpp::Time & stamp,
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & speed,
+    const geometry_msgs::msg::Twist & current_cmd_vel,
+    const geometry_msgs::msg::Twist & cmd_velocity,
+    const DynamicWindowBounds & dynamic_window,
+    double curvature,
+    double regulated_linear_vel,
+    bool constraints_violation);
+
   // Additional parameters
   double max_linear_vel_{0.5};
   double min_linear_vel_{0.0};
@@ -352,6 +379,11 @@ private:
   double max_linear_decel_{-0.5};
   double max_angular_accel_{1.0};
   double max_angular_decel_{-1.0};
+  bool enable_csv_logging_ {false};
+  std::string csv_log_directory_ {"/tmp"};
+  std::string csv_filename_prefix_ {"dwpp_log"};
+  bool csv_header_written_ {false};
+  std::ofstream csv_stream_;
   geometry_msgs::msg::Twist last_command_velocity_;
 };
 

@@ -99,6 +99,9 @@ controller_server:
       max_linear_decel: -0.5 # DWPP parameter
       max_angular_accel: 1.0 # DWPP parameter
       max_angular_decel: -1.0 # DWPP parameter
+      enable_csv_logging: false # DWPP parameter
+      csv_log_directory: "" # DWPP parameter (empty -> package share/data)
+      csv_filename_prefix: "dwpp_nav2" # DWPP parameter
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -147,6 +150,9 @@ velocity_smoother:
 - **max_linear_decel** (double): The maximum linear deceleration (m/s^2) to use.
 - **max_angular_accel** (double): The maximum angular acceleration (rad/s^2) to use.
 - **max_angular_decel** (double): The maximum angular deceleration (rad/s^2) to use.
+- **enable_csv_logging** (bool): Enable per-cycle CSV logging for DWPP internals.
+- **csv_log_directory** (string): Output directory for CSV files. If empty, package default `data` directory is used.
+- **csv_filename_prefix** (string): File name prefix for generated CSV logs.
 
 Other parameter settings are same as RPP:
 https://docs.nav2.org/configuration/packages/configuring-regulated-pp.html
@@ -206,4 +212,3 @@ Fumiya Ohnishi and Masaki Takahashi, “Dynamic Window Pure Pursuit for Robot Pa
   address   = {Genoa, Italy}
 }
 ```
-
